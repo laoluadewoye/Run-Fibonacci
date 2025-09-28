@@ -15,3 +15,11 @@ What I decided on is a self-propelling message passing network, with the fibonac
 The image below shows how the network will operate conceptually. No matter what implementation is done under the hood, this is the agnostic form of the project.
 
 image::extra_materials/concept_architecture.png["The concept architecture of the project. The PNG image shows four rounded boxes arranged in a rectangle with the boxes serving as corners of the square and wide blue arrows serving as the sides of the rectangle. The wide blue arrows are pointing in a clockwise fashion. The upper left box is a light red and has the label 'Server Stage 1.' The upper right box is a light orange and has the label 'Server Stage 2.' The lower right box is a light green and has the label 'Server Stage ... .' The lower left box is a light blue and has the label 'Server Stage N.'"]
+
+In this diagram, the fibonacci server network is a ring topology made up of multiple server stages. A server stage is a unique step within the server network, and can be made up of one or multiple servers. This allows a server stage to be defined as a physical machine, a virtual machine, a container, a pod, or a set multiple machines.
+
+In short, the server stage doesn't care about the underlying hardware or software. All the server stage cares about is where to expect communication from and where to send communication to.
+
+Servers in a server stage will receive and send pairs of fibonacci numbers. The first number in a pair is the second-to-last number in the building fibonacci sequence (so far) while the second number in a pair is the latest number in the building fibonacci sequence. These numbers will be used to calculate a new fibonacci number, and then the old last number will be paired with the calculated number. This new pair will then be sent to the next server stage in the network loop.
+
+For more details about what specifically goes on in a server within a server stage, check out the link:fibonacci_image/README.adoc[README] file within the `fibonacci_image` folder.
