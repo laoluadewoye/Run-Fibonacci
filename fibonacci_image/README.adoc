@@ -4,11 +4,14 @@
 :description: Specification on how fibonacci server can be designed and configured.
 :keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api, curl, http, https
 
-== Explanation of Image
-
-Latest Image Version: 1.0.0
+== Versioning
 
 Image Repository: https://hub.docker.com/r/laoluade/run-fibonacci
+
+Latest Image Version:
+include::latest_image.txt[]
+
+== Explanation of Image
 
 This container image is a generic image for running a small fibonacci number passing server. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
 
@@ -77,7 +80,7 @@ The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_hea
 .. **Definition** -> The network port of the server stage that the server should contact in the test network.
 .. **Schema** -> Must be non-privileged port number.
 . _THROTTLE_INTERVAL_
-.. **Definition** -> The interval that the server should wait between receiving fibonacci numbers and sending fibonacci numbers.
+.. **Definition** -> The interval that the server should wait in seconds between receiving fibonacci numbers and sending fibonacci numbers.
 .. **Schema** -> Must be a number that can be turned into a Python integer.
 . _UPPER_BOUND_
 .. **Definition** -> The number that the server must stop sending new fibonacci numbers if the last number the server received is larger than.
