@@ -11,6 +11,10 @@ Image Repository: https://hub.docker.com/r/laoluade/run-fibonacci
 Latest Image Version:
 include::latest_image.txt[]
 
+=== Changelog
+
+include::changelog.adoc[]
+
 == Explanation of Image
 
 This container image is a generic image for running a small fibonacci number passing server. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
@@ -57,7 +61,7 @@ The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_hea
 .. **Schema** -> Must be a number that can be turned into a Python integer.
 . _SERVER_STAGE_INDEX_
 .. **Definition** -> The server stage designator of the server in the test network.
-.. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT (exclusive).
+.. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT or equal to SERVER_STAGE_COUNT.
 . _SELF_ADDRESS_
 .. **Definition** -> The network address of the server in the test network.
 .. **Schema** -> Must be either a IPv4 address or a FQDN.

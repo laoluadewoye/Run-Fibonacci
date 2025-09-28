@@ -1,0 +1,13 @@
+[cols="1,1"]
+|===
+
+|Version 1.0.1
+a|* Changed SERVER_STAGE_INDEX check to allow equality to SERVER_STAGE_COUNT
+* Added test scripts for both Windows and Linux systems
+
+|Version 1.0.0
+a|* Initial image
+* generalized image components
+* Added README
+
+|===

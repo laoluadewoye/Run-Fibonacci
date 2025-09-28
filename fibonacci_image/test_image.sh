@@ -13,7 +13,7 @@ docker run --detach \
     --mount type=bind,src=./test_self.key,dst=/run/secrets/self.key \
     --mount type=bind,src=./test_self.crt,dst=/run/secrets/self.crt \
     --mount type=bind,src=./test_ca.crt,dst=/run/secrets/ca.crt \
-    --env SERVER_STAGE_COUNT=2 \
+    --env SERVER_STAGE_COUNT=1 \
     --env SERVER_STAGE_INDEX=1 \
     --env SELF_ADDRESS=0.0.0.0 \
     --env SELF_PORT=8081 \

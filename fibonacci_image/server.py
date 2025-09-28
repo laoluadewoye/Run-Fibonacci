@@ -13,7 +13,7 @@ print(f'Total amount of servers in the network is {SERVER_STAGE_COUNT}.', flush=
 # Get the server index
 assert 'SERVER_STAGE_INDEX' in environ
 SERVER_STAGE_INDEX: int = int(environ.get('SERVER_STAGE_INDEX'))
-assert 0 < SERVER_STAGE_INDEX < SERVER_STAGE_COUNT
+assert 0 < SERVER_STAGE_INDEX <= SERVER_STAGE_COUNT
 print(f'Server index validated, index is {SERVER_STAGE_INDEX}.', flush=True)
 
 # Get destination socket
