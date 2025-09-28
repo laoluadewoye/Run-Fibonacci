@@ -1,3 +1,6 @@
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
 Write-Host "Generating test TLS materials..."
 py -3.13 TestGenTLS.py
 
