@@ -5,7 +5,7 @@ set -e
 echo "Generating test TLS materials..."
 python TestGenTLS.py
 
-fileContent="$(cat ./latest_image.txt)"
+fileContent="$(cat ./latest_image.adoc)"
 echo "Creating container using image $fileContent..."
 
 docker run --detach \

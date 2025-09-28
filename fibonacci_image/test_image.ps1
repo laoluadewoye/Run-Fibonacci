@@ -8,7 +8,7 @@ Write-Host "Converting PEM materials to PKCS12 materials for Windows..."
 openssl pkcs12 -export -in test_ca.crt -inkey test_ca.key -out test_ca.p12
 openssl pkcs12 -export -in test_self.crt -inkey test_self.key -out test_self.p12
 
-$fileContent = Get-Content "./latest_image.txt"
+$fileContent = Get-Content "./latest_image.adoc"
 Write-Host "Creating container using image $fileContent..."
 
 docker run --detach `
