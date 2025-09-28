@@ -15,6 +15,14 @@ include::latest_image.adoc[]
 
 include::changelog.adoc[]
 
+== Required software
+
+. Docker/Docker Desktop
+. OpenSSL
+. PowerShell or POSIX-compliant Shell
+. Curl
+. Python (version 3.13 is recommended)
+
 == Explanation of Image
 
 This container image is a generic image for running a small fibonacci number passing server. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
