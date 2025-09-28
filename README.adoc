@@ -28,10 +28,10 @@ For more details about what specifically goes on in a server within a server sta
 
 Three use cases are provided by the project.
 
-The first use case is with standalone containers that are networked to communicate with each other. Each container will represent a server stage in the fibonacci network. These containers have their own networking capabilities and are directly managed by runtimes deployed by container engines such as Docker and Podman.
+The first use case is with standalone containers that are networked to communicate with each other. Each container will represent a server stage in the fibonacci network. These containers have their own networking capabilities and are directly managed by runtimes deployed by container engines such as Docker and Podman. To read more about this use case, check out the use case's link:use_case_one/README.adoc[README].
 
-The second use case is a pod that contains multiple containers. Each container will represent a server stage in the fibonacci network. The containers will share a network namespace inside the pod, and container platforms capable of pod management such as Podman and Kubernetes will manage the pod's activities.
+The second use case is a pod that contains multiple containers. Each container will represent a server stage in the fibonacci network. The containers will share a network namespace inside the pod, and container platforms capable of pod management such as Podman and Kubernetes will manage the pod's activities. To read more about this use case, check out the use case's link:use_case_two/README.adoc[README].
 
-The third use case is with single-container pods that are networked to communicate with each other. The pod abstraction allows container orchestrators such as Kubernetes to create a fibonacci network where a server stage can be represented by an entire deployment of pods. Container orchestrators would handle how network traffic travels between deployments, but core architecture of the network will not deviate from the image above.
+The third use case is with single-container pods that are networked to communicate with each other. The pod abstraction allows container orchestrators such as Kubernetes to create a fibonacci network where a server stage can be represented by an entire deployment of pods. Container orchestrators would handle how network traffic travels between deployments, but core architecture of the network will not deviate from the image above. To read more about this use case, check out the use case's link:use_case_three/README.adoc[README].
 
 Each use case has its own project folder that goes into more detail about how each use case will manifest. Docker and Kubernetes are the container platform software used for the tests.
