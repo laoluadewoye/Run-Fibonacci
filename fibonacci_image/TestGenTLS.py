@@ -106,8 +106,8 @@ ca_key_bytes: bytes = ca_key.private_bytes(
 )
 ca_cert_bytes: bytes = ca_cert.public_bytes(serialization.Encoding.PEM)
 
-# Generate external TLS materials
-external_cert_name: str = 'external.test.com'
+# Generate EXTERNAL TLS materials
+external_cert_name: str = 'EXTERNAL.test.com'
 external_subject = x509.Name([
     x509.NameAttribute(NameOID.COUNTRY_NAME, 'US'),
     x509.NameAttribute(NameOID.COMMON_NAME, external_cert_name),
@@ -117,7 +117,7 @@ external_key, external_cert = create_tls_materials(
     issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
 )
 
-# Save TLS materials for external communication
+# Save TLS materials for EXTERNAL communication
 with open('test_self.key', 'w') as key_file:
     key_file.write(
         external_key.private_bytes(

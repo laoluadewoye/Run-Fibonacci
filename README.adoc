@@ -2,7 +2,7 @@
 :author: Laolu Adewoye
 :email: laoluadewoye@gmail.com>
 :description: Explains the project and summarizes the repository contents.
-:keywords:
+:keywords: project, fibonacci, docker, kubernetes, asciidoc, pods, containers, network, server, stage, image, deployment, readme
 
 == Explanation of Project Idea
 

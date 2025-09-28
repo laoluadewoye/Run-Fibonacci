@@ -1,0 +1,40 @@
+{
+    "dns": {
+        "domain": "fibonaccitest.com",
+        "default": "localhost"
+    },
+    "docker": {
+        "network": {
+            "name": "run-fib-one",
+            "driver": "bridge",
+            "subnet": "172.19.0.0/16",
+            "range": "172.19.0.0/24",
+            "gateway": "172.19.0.1",
+            "prefix": "172.19.0",
+            "start": 10
+        }
+    },
+    "fs": {
+        "outputFolder": "output",
+        "external": {
+            "caCertName": "ca.crt",
+            "caKeyName": "ca.key",
+            "selfCertName": "external.crt",
+            "selfKeyName": "external.key"
+        }
+    },
+    "stage": {
+        "count": 3,
+        "namePrefix": "server-stage"
+    },
+    "tls": {
+        "cert": {
+            "validDaysCA": 2,
+            "validDaysLeaf": 1
+        },
+        "rsa": {
+            "keyLength": 4096,
+            "publicExponent": 65537
+        }
+    }
+}
