@@ -2,17 +2,35 @@
 :author: Laolu Adewoye
 :email: laoluadewoye@gmail.com>
 :description: Specification on how fibonacci server can be designed and configured.
-:keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api
+:keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api, curl, http, https
 
 == Explanation of Image
 
-This image is a generic image for running a small fibonacci number passing server inside a container. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
+This container image is a generic image for running a small fibonacci number passing server. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
 
-The image exposes three REST API points. The first is the Default route (`/`) that is used to pass along fibonacci numbers. The second is the healthcheck route (`/healthcheck`) that is used to perform health checks on the server. The third is the start route (`/start`) that is used to start the fibonacci number passing chain. 
+The following diagram displays the components of the server at a high level.
 
-All important information about the server is printed to `STDOUT` using the Python `print` command's `flusk` argument.
+image:../extra_materials/server_components.png["Diagram of the componets of the generic fibonacci server. The biggest components are colored in dark blue boxes. They are the Gunicorn server, the send number daemon, and the health check daemon. There is a dark purple component called the TLS Materials as well. The gunicorn server contains a light blue box labeled Flask API, which represents the software REST endpoints for the server. Inside the Flask API box are three green boxes named STDOUT Logger, Send Threader, and REST APIs respectively. Inside the REST API box are three orange boxes that represent the default, healthcheck, and start endpoints of the server. Five directional arrows connect boxes, with the direction indicating that the first box utilizes another box. The REST API is connected to the STDOUT Logger. The default API Endpoint is connected to the Send Threader. The Send Threader is connected to the Send Number Daemon. The Health Check Daemon is connected to the healthcheck API Endpoint. The TLS Materials is connected to the Gunicorn Server."]
 
-=== Software Bill of Materials
+In this diagram, we can see what components comprise the server image. The majority of the server is contained within the Flask API, which in turn is managed by the Gunicorn Server. TLS materials are given to the Gunicorn Server to enable encrypted communication. Two daemons (which are actually shells scripts) are connected to the Flask API through different functions and endpoints. Lastly, the STDOUT Logger is there to record any activity that takes place.
+
+The container image exposes three REST API points. The first is the Default route (`/`) that is used to pass along fibonacci numbers. The second is the healthcheck route (`/healthcheck`) that is used to perform health checks on the server. The third is the start route (`/start`) that is used to start the fibonacci number passing chain.
+
+All important information about the server is printed to `STDOUT` using the Python `print` command's `flush` argument.
+
+=== Files Used in Image
+
+The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_healthcheck.sh`, and `send_next_fib.sh`
+
+`gunicorn.conf.py` is the configuration file used by Gunicorn to tailor the server. This file specifies the network socket that the server listens on and the TLS files necessary for encrypted communication among other things. It is represented by the Gunicorn Server box in the diagram above.
+
+`server.py` is the Flask definition file that is served by Gunicorn. This file specifies the logic for the API endpoints and instantiates the constants that are used during the server's runtime. It is represented by the Flask API box in the diagram above.
+
+`send_healthcheck.sh` is the shell script that is called by an external management process to check the server's health. It utilizes Curl to send an HTTPS message to the running server. It is represented by the Health Check Daemon box in the diagram above.
+
+`send_next_fib.sh` is the shell script that is called by the healthcheck API to send a pair of fibonacci numbers to another server stage. It utilizes Curl to send an HTTPS message to the destination endpoint. It is represented by the Send Number Daemon box in the diagram above.
+
+== Software Bill of Materials
 
 . Python Docker Official Image
 .. This image uses the Alpine 3.22 version of the Python 3.13 image by Default.
@@ -20,6 +38,8 @@ All important information about the server is printed to `STDOUT` using the Pyth
 .. This image uses Flask version 3.1.2 by Default.
 . Python Gunicorn
 .. This image uses Gunicorn version 23.0.0 by Default.
+. Curl
+.. This image uses Curl version 8.16.0-r1 by Default.
 
 == Argument Schema
 
@@ -29,6 +49,10 @@ All important information about the server is printed to `STDOUT` using the Pyth
 .. **Definition** -> Base layer used to build the fibonacci server image.
 .. **Default** -> docker.io/library/python:3.13-alpine3.22
 .. **Schema** -> Must be a valid Python image specifier based on Alpine Linux.
+. _CURL_VERSION_
+.. **Definition** -> Version of Curl Package to install.
+.. **Default** -> 8.16.0-r1
+.. **Schema** -> Must be a valid version number of Curl uploaded to the Alpine Linux Package Repository.
 . _FLASK_VERSION_
 .. **Definition** -> Version of Python Flask library to install.
 .. **Default** -> 3.1.2
