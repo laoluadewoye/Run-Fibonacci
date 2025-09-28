@@ -41,9 +41,26 @@ The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_hea
 
 `send_next_fib.sh` is the shell script that is called by the healthcheck API to send a pair of fibonacci numbers to another server stage. It utilizes Curl to send an HTTPS message to the destination endpoint. It is represented by the Send Number Daemon box in the diagram above.
 
-==== Other Files in Directory
+=== Other Image Details
+
+Here is a list of hardcoded details in the Dockerfile for the image. Feel free to change any of these values on your own system.
+
+. The image defines the `docker.io/library/python:3.13-alpine3.22` image as a base layer.
+. The image defines the non-root user `app` to run the server.
+. The image defines server contents to be kept in the `/usr/src/app` directory. The user `app` is given ownership of this directory.
+. The image defines a healthcheck to monitor the state of the server.
+.. The healthcheck is given a grace period of `10` seconds in the beginning.
+.. The healthcheck is set to run every `10` seconds.
+.. The healthcheck times out after `5` seconds if not complete.
+.. The healthcheck has a maximum of `3` attempts to succeed before the server is deemed unhealthy.
+.. The healthcheck runs the `/usr/src/app/send_healthcheck.sh` script to check server health.
+. The image defines the `gunicorn` command to be the entrypoint of the container built by the image.
+
+== Other Files in Directory
 
 `README.adoc` is the file you are reading right now that explains everything about the image.
+
+`Dockerfile` is the file that defines the image.
 
 `changelog.adoc` is the secondary AsciiDoc file used to hold changelog information about the image.
 
