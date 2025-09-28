@@ -36,6 +36,8 @@ def create_tls_materials(subject, cert_name, cert_days, issuer_key=None,
     cert = cert.add_extension(
         x509.SubjectAlternativeName([
             x509.DNSName(cert_name),
+            x509.DNSName('localhost'),
+            x509.DNSName('0.0.0.0'),
         ]),
         critical=False
     )
