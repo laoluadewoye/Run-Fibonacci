@@ -6,6 +6,10 @@
 
 == Explanation of Image
 
+Latest Image Version: 1.0.0
+
+Image Repository: https://hub.docker.com/r/laoluade/run-fibonacci
+
 This container image is a generic image for running a small fibonacci number passing server. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
 
 The following diagram displays the components of the server at a high level.
@@ -41,46 +45,9 @@ The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_hea
 . Curl
 .. This image uses Curl version 8.16.0-r1 by Default.
 
-== Argument Schema
+== Configurable Server Environmental Arguments
 
-=== Configurable Image Build Arguments
-
-. _BASE_IMAGE_
-.. **Definition** -> Base layer used to build the fibonacci server image.
-.. **Default** -> docker.io/library/python:3.13-alpine3.22
-.. **Schema** -> Must be a valid Python image specifier based on Alpine Linux.
-. _CURL_VERSION_
-.. **Definition** -> Version of Curl Package to install.
-.. **Default** -> 8.16.0-r1
-.. **Schema** -> Must be a valid version number of Curl uploaded to the Alpine Linux Package Repository.
-. _FLASK_VERSION_
-.. **Definition** -> Version of Python Flask library to install.
-.. **Default** -> 3.1.2
-.. **Schema** -> Must be a valid version number of Flask uploaded to PyPi.
-. _GUNICORN_VERSION_
-.. **Definition** -> Version of Python Gunicorn library to install.
-.. **Default** -> 23.0.0
-.. **Schema** -> Must be a valid version number of Gunicorn uploaded to PyPi.
-. _HEALTH_START_PERIOD_
-.. **Definition** -> Time (in seconds) from the time point when the fibonacci server starts where healthcheck fails should not count against the server.
-.. **Default** -> 10s
-.. **Schema** -> Must be an integer with the letter 's' at the end of it.
-. _HEALTH_CHECK_INTERVAL_
-.. **Definition** -> The interval (in seconds) between healthcheck script runs.
-.. **Default** -> 10s
-.. **Schema** -> Must be an integer with the letter 's' at the end of it.
-. _HEALTH_CHECK_TIMEOUT_
-.. **Definition** -> The maximum time (in seconds) that a healthcheck should take before timing out as a failed check.
-.. **Default** -> 10s
-.. **Schema** -> Must be an integer with the letter 's' at the end of it.
-. _HEALTH_CHECK_RETRIES_
-.. **Definition** -> The number of times a healthcheck can fail before the server is deemed bad.
-.. **Default** -> 3
-.. **Schema** -> Must be an integer.
-
-=== Configurable Server Environmental Arguments
-
-**Important: All environmental variables in this section are required for the server to work.**
+**Important: All environmental variables in this section are required for the server to work. They do not have defaults.**
 
 . _SERVER_STAGE_COUNT_
 .. **Definition** -> The number of server stages in the test network.
