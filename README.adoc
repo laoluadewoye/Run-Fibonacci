@@ -23,3 +23,15 @@ In short, the server stage doesn't care about the underlying hardware or softwar
 Servers in a server stage will receive and send pairs of fibonacci numbers. The first number in a pair is the second-to-last number in the building fibonacci sequence (so far) while the second number in a pair is the latest number in the building fibonacci sequence. These numbers will be used to calculate a new fibonacci number, and then the old last number will be paired with the calculated number. This new pair will then be sent to the next server stage in the network loop.
 
 For more details about what specifically goes on in a server within a server stage, check out the link:fibonacci_image/README.adoc[README] file within the `fibonacci_image` folder.
+
+== Use Cases in Project
+
+Three use cases are provided by the project.
+
+The first use case is with standalone containers that are networked to communicate with each other. Each container will represent a server stage in the fibonacci network. These containers have their own networking capabilities and are directly managed by runtimes deployed by container engines such as Docker and Podman.
+
+The second use case is a pod that contains multiple containers. Each container will represent a server stage in the fibonacci network. The containers will share a network namespace inside the pod, and container platforms capable of pod management such as Podman and Kubernetes will manage the pod's activities.
+
+The third use case is with single-container pods that are networked to communicate with each other. The pod abstraction allows container orchestrators such as Kubernetes to create a fibonacci network where a server stage can be represented by an entire deployment of pods. Container orchestrators would handle how network traffic travels between deployments, but core architecture of the network will not deviate from the image above.
+
+Each use case has its own project folder that goes into more detail about how each use case will manifest. Docker and Kubernetes are the container platform software used for the tests.
