@@ -1,0 +1,17 @@
+= Generic Fibonacci Image Specification
+:author: Laolu Adewoye
+:email: laoluadewoye@gmail.com>
+:description: Explains the project and summarizes the repository contents.
+:keywords:
+
+== Explanation of Project Idea
+
+This test is a way for me to force myself to get more familiar with container technologies, including Docker, Podman, and Kubernetes. I needed an idea that would ensure that I would not be able to complete it unscathed, but not so hard that months would go by before I am able to finish the project.
+
+What I decided on is a self-propelling message passing network, with the fibonacci sequence being the core theme of the project. It was a simple enough concept that coding it would be a breeze while ensuring that I would learn how I can network containers and pods together. I could even learn other stuff along the way, like moving from Markdown readmes to AsciiDoc readmes.
+
+=== Project Architecture
+
+The image below shows how the network will operate conceptually. No matter what implementation is done under the hood, this is the agnostic form of the project.
+
+image::extra_materials/concept_architecture.png["The concept architecture of the project. The PNG image shows four rounded boxes arranged in a rectangle with the boxes serving as corners of the square and wide blue arrows serving as the sides of the rectangle. The wide blue arrows are pointing in a clockwise fashion. The upper left box is a light red and has the label 'Server Stage 1.' The upper right box is a light orange and has the label 'Server Stage 2.' The lower right box is a light green and has the label 'Server Stage ... .' The lower left box is a light blue and has the label 'Server Stage N.'"]

@@ -1,0 +1,93 @@
+= Generic Fibonacci Image Specification
+:author: Laolu Adewoye
+:email: laoluadewoye@gmail.com>
+:description: Specification on how fibonacci server can be designed and configured.
+:keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api
+
+== Explanation of Image
+
+This image is a generic image for running a small fibonacci number passing server inside a container. This image is made to work in a number of different contexts, such as running as a standalone container or as part of a larger kubernetes deployment.
+
+The image exposes three REST API points. The first is the Default route (`/`) that is used to pass along fibonacci numbers. The second is the healthcheck route (`/healthcheck`) that is used to perform health checks on the server. The third is the start route (`/start`) that is used to start the fibonacci number passing chain. 
+
+All important information about the server is printed to `STDOUT` using the Python `print` command's `flusk` argument.
+
+=== Software Bill of Materials
+
+. Python Docker Official Image
+.. This image uses the Alpine 3.22 version of the Python 3.13 image by Default.
+. Python Flask
+.. This image uses Flask version 3.1.2 by Default.
+. Python Gunicorn
+.. This image uses Gunicorn version 23.0.0 by Default.
+
+== Argument Schema
+
+=== Configurable Image Build Arguments
+
+. _BASE_IMAGE_
+.. **Definition** -> Base layer used to build the fibonacci server image.
+.. **Default** -> docker.io/library/python:3.13-alpine3.22
+.. **Schema** -> Must be a valid Python image specifier based on Alpine Linux.
+. _FLASK_VERSION_
+.. **Definition** -> Version of Python Flask library to install.
+.. **Default** -> 3.1.2
+.. **Schema** -> Must be a valid version number of Flask uploaded to PyPi.
+. _GUNICORN_VERSION_
+.. **Definition** -> Version of Python Gunicorn library to install.
+.. **Default** -> 23.0.0
+.. **Schema** -> Must be a valid version number of Gunicorn uploaded to PyPi.
+. _HEALTH_START_PERIOD_
+.. **Definition** -> Time (in seconds) from the time point when the fibonacci server starts where healthcheck fails should not count against the server.
+.. **Default** -> 10s
+.. **Schema** -> Must be an integer with the letter 's' at the end of it.
+. _HEALTH_CHECK_INTERVAL_
+.. **Definition** -> The interval (in seconds) between healthcheck script runs.
+.. **Default** -> 10s
+.. **Schema** -> Must be an integer with the letter 's' at the end of it.
+. _HEALTH_CHECK_TIMEOUT_
+.. **Definition** -> The maximum time (in seconds) that a healthcheck should take before timing out as a failed check.
+.. **Default** -> 10s
+.. **Schema** -> Must be an integer with the letter 's' at the end of it.
+. _HEALTH_CHECK_RETRIES_
+.. **Definition** -> The number of times a healthcheck can fail before the server is deemed bad.
+.. **Default** -> 3
+.. **Schema** -> Must be an integer.
+
+=== Configurable Server Environmental Arguments
+
+**Important: All environmental variables in this section are required for the server to work.**
+
+. _SERVER_STAGE_COUNT_
+.. **Definition** -> The number of server stages in the test network.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+. _SERVER_STAGE_INDEX_
+.. **Definition** -> The server stage designator of the server in the test network.
+.. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT (exclusive).
+. _SELF_ADDRESS_
+.. **Definition** -> The network address of the server in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+. _SELF_PORT_
+.. **Definition** -> The network port of the server in the test network.
+.. **Schema** -> Must be non-privileged port number.
+. _SECRET_KEY_TARGET_
+.. **Definition** -> The location of the personal TLS encryption key of the server in the test network.
+.. **Schema** -> Must be a UNIX absolute filepath.
+. _SECRET_CERT_TARGET_
+.. **Definition** -> The location of the personal TLS certificate of the server in the test network.
+.. **Schema** -> Must be a UNIX absolute filepath.
+. _SECRET_CA_CERT_TARGET_
+.. **Definition** -> The location of the certificate authority TLS certificate of the server in the test network.
+.. **Schema** -> Must be a UNIX absolute filepath.
+. _DEST_ADDRESS_
+.. **Definition** -> The network address of the server stage that the server should contact in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+. _DEST_PORT_
+.. **Definition** -> The network port of the server stage that the server should contact in the test network.
+.. **Schema** -> Must be non-privileged port number.
+. _THROTTLE_INTERVAL_
+.. **Definition** -> The interval that the server should wait between receiving fibonacci numbers and sending fibonacci numbers.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+. _UPPER_BOUND_
+.. **Definition** -> The number that the server must stop sending new fibonacci numbers if the last number the server received is larger than.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
