@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # Run Compose File
     print('Running Docker Compose configuration...')
-    run(['docker-compose', '-f', f'{BASE_FOLDER}/docker-compose.json', 'up', '-d'])
+    run(['docker-compose', '-f', f'{BASE_FOLDER}/{fs['outputFolder']}/docker-compose.json', 'up', '-d'])
 
     # Send a get request to the start API
     for i in range(setup_config['stage']['startDelay'], 0, -1):
@@ -54,3 +54,4 @@ if __name__ == '__main__':
     )
     print('Response status code:', response.status_code)
     print('Response contents:', response.json())
+    print('Use the command "docker compose rm --stop --force" to remove the containers once done with them.')

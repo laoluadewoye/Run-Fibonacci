@@ -66,12 +66,12 @@ def create_compose(base_folder, setup_config):
                 'SERVER_STAGE_COUNT': stage['count'],
                 'SERVER_STAGE_INDEX': server_stage_index,
                 'SELF_ADDRESS': server_stage_ip_addr,
-                'SELF_PORT': setup_config['platform']['port'],
+                'SELF_PORT': setup_config['platform']['startPort'],
                 'SECRET_KEY_TARGET': envs['selfKeyTarget'],
                 'SECRET_CERT_TARGET': envs['selfCertTarget'],
                 'SECRET_CA_CERT_TARGET': envs['caCertTarget'],
                 'DEST_ADDRESS': dest_stage_hostname,
-                'DEST_PORT': setup_config['platform']['port'],
+                'DEST_PORT': setup_config['platform']['startPort'],
                 'THROTTLE_INTERVAL': envs['throttleInterval'],
                 'UPPER_BOUND': envs['upperBound'],
             },
@@ -91,7 +91,7 @@ def create_compose(base_folder, setup_config):
         if server_stage_index == 1:
             print(f'Defining port binding for service {server_stage_name}...')
             compose_json['services'][server_stage_name]['ports'] = [
-                f'{setup_config['platform']['port']}:{setup_config['platform']['port']}'
+                f'{setup_config['platform']['startPort']}:{setup_config['platform']['startPort']}'
             ]
 
     # Fill in secrets
@@ -113,5 +113,5 @@ def create_compose(base_folder, setup_config):
 
     # Save json file
     print('Saving compose definitions to json file...')
-    with open(f'{base_folder}/docker-compose.json', "w") as compose_file:
+    with open(f'{base_folder}/{fs['outputFolder']}/docker-compose.json', "w") as compose_file:
         dump(compose_json, compose_file, indent=4)

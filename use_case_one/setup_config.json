@@ -28,7 +28,8 @@
             "prefix": "172.19.0",
             "startAddress": 10
         },
-        "port": 8080,
+        "startPort": 8080,
+        "replicas": 6,
         "restartPolicy": "unless-stopped"
     },
     "stage": {
