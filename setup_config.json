@@ -31,7 +31,7 @@
             "startAddress": 10
         },
         "startPort": 8080,
-        "replicas": 6,
+        "replicas": 3,
         "restartPolicy": "unless-stopped"
     },
     "stage": {

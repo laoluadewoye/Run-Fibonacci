@@ -1,8 +1,16 @@
-= Generic Fibonacci Image Specification
+= Fibonacci Message Passing Project
 :author: Laolu Adewoye
 :email: laoluadewoye@gmail.com>
 :description: Explains the project and summarizes the repository contents.
 :keywords: project, fibonacci, docker, kubernetes, asciidoc, pods, containers, network, server, stage, image, deployment, readme
+
+== Versioning
+
+Latest Image Version:
+include::fibonacci_image/latest_image.adoc[]
+
+Use Case One Version:
+include::use_case_one/latest_program.adoc[]
 
 == Explanation of Project Idea
 
@@ -37,3 +45,141 @@ The third use case uses Kubernetes to create a pod that contains multiple contai
 The fourth use case uses Kubernetes to create single-container pods that are networked to communicate with each other. The pod abstraction allows container orchestrators to create a fibonacci network where a server stage can be represented by an entire deployment of pods. Container orchestrators would handle how network traffic travels between deployments, but core architecture of the network will not deviate from the image above. To read more about this use case, check out the use case's link:use_case_four/README.adoc[README].
 
 Each use case has its own project folder that goes into more detail about how each use case will manifest. Docker, Podman, and Kubernetes are the container platform software used for the tests.
+
+== Project-wide files
+
+There are two files that will be used across the entire project. The first is `setup_config.json`, which is a JSON file that holds the keys and values necessary to customize a use case. The second is `GenerateTLS.py`, which is a Python program that is used project-wide to generate the TLS keys and certificates necessary for encrypted communication.
+
+`setup_config.json` contains dozens of keys that are accessed by the use cases. All keys are written in camelcase. The following section will explain the schema.
+
+=== Setup Config Schema
+
+. _dns_
+.. **Definition** -> Top-level key that specifies information related to defining domain names.
+.. **Schema** -> JSON Object that contains the following keys:
+... _countryInitials_
+.... **Definition** -> `dns` member key that specifies the country initials to use when creating certificates.
+.... **Schema** -> JSON string
+... _domain_
+.... **Definition** -> `dns` member key that specifies the root domain name for all entities.
+.... **Schema** -> JSON string
+... _default_
+.... **Definition** -> `dns` member key that specifies the default domain name for all entities.
+.... **Schema** -> JSON string
+... _caName_
+.... **Definition** -> `dns` member key that specifies what CA items should be prefixed with.
+.... **Schema** -> JSON string
+... _externalName_
+.... **Definition** -> `dns` member key that specifies what external items should be prefixed with.
+.... **Schema** -> JSON string
+. _envs_
+.. **Definition** -> Top-level key that specifies information related to environmental variables that isn't covered by other JSON keys.
+.. **Schema** -> JSON Object that contains the following keys:
+... _selfKeyTarget_
+.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS key.
+.... **Schema** -> JSON string
+... _selfCertTarget_
+.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS certificate.
+.... **Schema** -> JSON string
+... _caCertTarget_
+.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS CA certificate.
+.... **Schema** -> JSON string
+... _throttleInterval_
+.... **Definition** -> `envs` member key that specifies the interval in seconds that a server should wait between receiving numbers and sending numbers.
+.... **Schema** -> JSON integer
+... _upperBound_
+.... **Definition** -> `envs` member key that specifies the number that, upon reaching, the server should stop sending new numbers.
+.... **Schema** -> JSON integer
+. _fs_
+.. **Definition** -> Top-level key that specifies information related to filepath locations in the project directory, not the internal filesystem of a containerized server.
+.. **Schema** -> JSON Object that contains the following keys:
+... _tlsFolder_
+.... **Definition** -> `fs` member key that specifies the folder in the project directory that stores TLS materials.
+.... **Schema** -> JSON string
+... _outputFolder_
+.... **Definition** -> `fs` member key that specifies the folder in a use case directory that stores generated content.
+.... **Schema** -> JSON string
+... _certExt_
+.... **Definition** -> `fs` member key that specifies the file extension to use for exported PEM certificates.
+.... **Schema** -> JSON string
+... _keyExt_
+.... **Definition** -> `fs` member key that specifies the file extension to use for exported PEM keys.
+.... **Schema** -> JSON string
+... _imageVersionFp_
+.... **Definition** -> `fs` member key that specifies the file that holds the fibonacci image version to use.
+.... **Schema** -> JSON string
+. _platform_
+.. **Definition** -> Top-level key that specifies information related to the settings to use for created container objects.
+.. **Schema** -> JSON Object that contains the following keys:
+... _network_
+.... **Definition** -> `platform` member key that specifies information related to the network settings to use for containers and pods.
+.... **Schema** -> JSON Object that contains the following keys:
+..... _name_
+...... **Definition** -> `network` member key that specifies the name of the network or network namespace to create.
+...... **Schema** -> JSON string
+..... _driver_
+...... **Definition** -> `network` member key that specifies the network type to assign to the network or network namespace.
+...... **Schema** -> JSON string
+..... _subnet_
+...... **Definition** -> `network` member key that specifies the IPv4 (with subnet mask) network subnet to assign to the network or network namespace.
+...... **Schema** -> JSON string
+..... _range_
+...... **Definition** -> `network` member key that specifies the IPv4 network range to assign to the network or network namespace.
+...... **Schema** -> JSON string
+..... _gateway_
+...... **Definition** -> `network` member key that specifies the IPv4 network gateway to assign to the network or network namespace.
+...... **Schema** -> JSON string
+..... _prefix_
+...... **Definition** -> `network` member key that specifies the IPv4 network prefix to assign to containers and pods in the network or network namespace.
+...... **Schema** -> JSON string
+..... _startAddress_
+...... **Definition** -> `network` member key that specifies the IPv4 starting host address number to assign to containers and pods in the network or network namespace.
+...... **Schema** -> JSON integer
+... _startPort_
+.... **Definition** -> `platform` member key that specifies the starting non-privileged port number to assign to containers and pods in the network or network namespace.
+.... **Schema** -> JSON integer
+... _replicas_
+.... **Definition** -> `platform` member key that specifies the number of replica containers and pods to make in a given server stage.
+.... **Schema** -> JSON integer
+... _restartPolicy_
+.... **Definition** -> `platform` member key that specifies the restart policy for containers and pods.
+.... **Schema** -> JSON string
+. _stage_
+.. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.
+.. **Schema** -> JSON Object that contains the following keys:
+... _composeNameSuffix_
+.... **Definition** -> `stage` member key that specifies the suffix for Docker Compose service names.
+.... **Schema** -> JSON string
+... _count_
+.... **Definition** -> `stage` member key that specifies the amount of server stages to create.
+.... **Schema** -> JSON integer
+... _namePrefix_
+.... **Definition** -> `stage` member key that specifies the name prefix for servers, containers, and pods.
+.... **Schema** -> JSON string
+... _startDelay_
+.... **Definition** -> `stage` member key that specifies how long in seconds should a program wait before calling a server's start API.
+.... **Schema** -> JSON integer
+... _useCasePrefix_
+.... **Definition** -> `stage` member key that specifies the prefix to assign to a specific use case.
+.... **Schema** -> JSON string
+. _tls_
+.. **Definition** -> Top-level key that specifies information related to attributes about TLS keys and certificates.
+.. **Schema** -> JSON Object that contains the following keys:
+... _cert_
+.... **Definition** -> `tls` member key that specifies information related to TlS certificates.
+.... **Schema** -> JSON Object that contains the following keys:
+..... _validDaysCA_
+...... **Definition** -> `cert` member key that specifies the valid duration of a CA certificate.
+...... **Schema** -> JSON integer
+..... _validDaysLeaf_
+...... **Definition** -> `cert` member key that specifies the valid duration of a Leaf certificate.
+...... **Schema** -> JSON integer
+... _rsa_
+.... **Definition** -> `tls` member key that specifies information related to RSA keys.
+.... **Schema** -> JSON Object that contains the following keys:
+..... _keyLength_
+...... **Definition** -> `rsa` member key that specifies the amount of bits for an RSA key.
+...... **Schema** -> JSON integer
+..... _publicExponent_
+...... **Definition** -> `rsa` member key that specifies the public exponent to use for RSA key generation.
+...... **Schema** -> JSON integer
