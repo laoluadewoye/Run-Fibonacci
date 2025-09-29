@@ -15,8 +15,9 @@ def create_compose(base_folder, project_folder, setup_config):
         mkdir(f'{base_folder}/{fs['outputFolder']}')
 
     # Create start of json config
+    compose_name = f"{stage['useCasePrefix']}-1-{stage['composeNameSuffix']}"
     compose_json: dict = {
-        'name': f"{stage['useCasePrefix']}-{stage['composeNameSuffix']}",
+        'name': compose_name,
         'services': {},
         'networks': {
             network['name']: {

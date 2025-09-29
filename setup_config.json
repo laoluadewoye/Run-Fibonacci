@@ -39,7 +39,7 @@
         "count": 3,
         "namePrefix": "server-stage",
         "startDelay": 5,
-        "useCasePrefix": "use-case-1"
+        "useCasePrefix": "use-case"
     },
     "tls": {
         "cert": {
