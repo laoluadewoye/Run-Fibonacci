@@ -4,6 +4,7 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 
 def create_tls_materials(subject, cert_name, cert_days, issuer_key=None,
@@ -89,6 +90,9 @@ def create_tls_materials(subject, cert_name, cert_days, issuer_key=None,
     return key, cert
 
 
+# Get base folder
+BASE_FOLDER = Path(__file__).resolve().parent
+
 # Generate CA TLS materials
 ca_cert_name: str = 'ca.test.com'
 ca_subject = ca_issuer = x509.Name([
@@ -118,7 +122,7 @@ external_key, external_cert = create_tls_materials(
 )
 
 # Save TLS materials for EXTERNAL communication
-with open('test_self.key', 'w') as key_file:
+with open(f'{BASE_FOLDER}/test_self.key', 'w') as key_file:
     key_file.write(
         external_key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -127,13 +131,13 @@ with open('test_self.key', 'w') as key_file:
         ).decode()
     )
 
-with open('test_self.crt', 'w') as cert_file:
+with open(f'{BASE_FOLDER}/test_self.crt', 'w') as cert_file:
     cert_file.write(
         external_cert.public_bytes(serialization.Encoding.PEM).decode()
     )
 
-with open('test_ca.key', 'w') as ca_key_file:
+with open(f'{BASE_FOLDER}/test_ca.key', 'w') as ca_key_file:
     ca_key_file.write(ca_key_bytes.decode())
 
-with open('test_ca.crt', 'w') as ca_cert_file:
+with open(f'{BASE_FOLDER}/test_ca.crt', 'w') as ca_cert_file:
     ca_cert_file.write(ca_cert_bytes.decode())

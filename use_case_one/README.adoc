@@ -1,0 +1,40 @@
+= Fibonacci Message Passing Project
+:author: Laolu Adewoye
+:email: laoluadewoye@gmail.com>
+:description: Explains how the Docker Compose use case works.
+:keywords: generation, python, networking, topology, bridge, star, ring, port, binding, enviornmental, env, variable, host, dns, mapping, ip, ipv4
+
+== Versioning
+
+Use Case One Version:
+include::latest_program.adoc[]
+
+=== Changelog
+
+include::changelog.adoc[]
+
+== Explanation of Use Case
+
+This use case seeks to show how the Project's architecture can be achieved using the Docker (and maybe Podman) Compose feature. Docker Compose allows people to deploy containers as services for ease of management, rather than individually spinning up containers and supporting container objects. From the perspective of a casual container user, Docker Compose is the lite version of Docker Swarm, which is their full container orchestration toolkit.
+
+image:../extra_materials/use_case_one_diagram.png["Diagram of Use Case in Docker Compose from the component perspective. In the diagram, a person icon stands next to a large, light blue box that represents the entire Docker Compose application. Inside the large, light blue Docker Compose box, there are six other boxes in two rows. The first row has four square boxes while the second row had two long and flat boxes. In the first row, each box represents a server stage. The order of boxes goes as follows: The first box is labaled server stage 1 and is light red. The second box is labeled server stage 2 and is light orange. The third box is labeled server stage dot dot dot and is light green. The fourth box is labeled server stage letter N and is light blue. Inside each server stage box are five smaller boxes that represent the fibonacci server image, the enviornmental varialbes, the host IP mappings, the container's network interface, and TLS secrets. Only the first server stage box has an additional port binding box that connects the server stage box to outside the Docker Compose app, symbolizing how that server stage is made available to a user outside the Docker Compose application namespace. The second row of boxes represent the network switch and the pool of TLS secrets that the first row of boxes share. The network interface box is pink while the TLS secret pool box is black."]
+
+The image above showcases how the Fibonacci message passing takes place from a Docker component perspective. A safe and proper configuration of this test requires that secrets be passed into containers. Container tools such as Podman and Kubernetes support this out of the box, but using secrets in Docker must be done with either the Docker Swarm utility or the Docker Compose utility. I didn't feel like starting a Docker Swarm cluster over a passion project, so I chose the latter.
+
+The server stages shown in the image mirror the server stages shown in the server architecture in the link:../README.adoc[project README]. While they are in a virtual bus/star topology as opposed to the logical ring topology as in that architecture, they will still function like a logical ring topology.
+
+Every service is a sever stage, and every service gets the same fibonacci image to customize through environmental variables. Host mappings are added to each service so every service knows how to reach another, either by IP address or FDQN. Each service has a network interface with a static IPv4 address that is connected to a custom bridge network. Lastly, each service receives it's unique set of TLS keys and certificates from a TLS secret pool.
+
+The very first server stage service is given a port binding that allows it to be accessed from the outside. This way, people that run the docker compose application can call the start API with little effort.
+
+== Files Within Use Case Directory
+
+There are only two files in the use case folder outside the AsciiDocs. As TLS generation is handled by a generic Python program, all the use case has to do is handle the actual setup of the application.
+
+`Main.py` is the primary file to run to start this application. It handles top level calls to other Generation programs and starts the fibonacci message passing sequence.
+
+`GenerateCompose.py` is the secondary file specific to the use case. It is primarily response for dynamically generating the Docker Compose configuration to run and exporting it to a JSON file. Yes, by the way you can run Docker Compose configurations from JSON files.
+
+The output of the program (outside TLS stuff) is `docker-compose.json` in your chosen output folder (see project README) which is run by main to deploy the compose configuration to the Docker daemon.
+
+To run this program, just run `Main.py` and you're good to go!

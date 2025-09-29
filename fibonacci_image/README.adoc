@@ -80,6 +80,8 @@ Here is a list of hardcoded details in the Dockerfile for the image. Feel free t
 
 `TestGenTLS.py` is a Python script used to create the TLS materials for the test_image scripts.
 
+Note: For the test scripts, you will be on your own for scaling down the test. All that's created is a container and some TLS credential stuff though, so it should be easy.
+
 == Software Bill of Materials
 
 . Python Docker Official Image
