@@ -1,3 +1,5 @@
+from os.path import exists
+from os import mkdir
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -70,14 +72,18 @@ def create_key_cert(subject, alt_names, cert_days, public_exponent, key_length, 
     return key, cert
 
 
-def create_tls_materials(base_folder, setup_config):
+def create_tls_materials(project_folder, setup_config):
     # Create subgroups to save space
     dns = setup_config['dns']
     tls = setup_config['tls']
     fs = setup_config['fs']
-    out_folder = setup_config['fs']['outputFolder']
+    tls_folder = setup_config['fs']['tlsFolder']
     network = setup_config['platform']['network']
     stage = setup_config['stage']
+
+    # Create TLS folder
+    if not exists(f'{project_folder}/{tls_folder}'):
+        mkdir(f'{project_folder}/{tls_folder}')
 
     # Generate CA TLS materials
     print('Creating CA TLS materials...')
@@ -109,7 +115,7 @@ def create_tls_materials(base_folder, setup_config):
 
     # Save TLS materials for external communication
     print('Saving external TLS materials...')
-    with open(f'{base_folder}/{out_folder}/{dns['externalName']}.{fs['keyExt']}', 'w') as key_file:
+    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['keyExt']}', 'w') as key_file:
         key_file.write(
             external_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
@@ -118,11 +124,11 @@ def create_tls_materials(base_folder, setup_config):
             ).decode()
         )
 
-    with open(f'{base_folder}/{out_folder}/{dns['externalName']}.{fs['certExt']}', 'w') as cert_file:
+    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['certExt']}', 'w') as cert_file:
         cert_file.write(external_cert.public_bytes(serialization.Encoding.PEM).decode())
 
     print('Saving CA TLS materials...')
-    with open(f'{base_folder}/{out_folder}/{dns['caName']}.{fs['keyExt']}', 'w') as ca_key_file:
+    with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['keyExt']}', 'w') as ca_key_file:
         ca_key_file.write(
             ca_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
@@ -131,7 +137,7 @@ def create_tls_materials(base_folder, setup_config):
             ).decode()
         )
 
-    with open(f'{base_folder}/{out_folder}/{dns['caName']}.{fs['certExt']}', 'w') as ca_cert_file:
+    with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['certExt']}', 'w') as ca_cert_file:
         ca_cert_file.write(ca_cert.public_bytes(serialization.Encoding.PEM).decode())
 
     # Generate server stage TLS materials
@@ -159,7 +165,7 @@ def create_tls_materials(base_folder, setup_config):
         print(f'Saving TLS materials for server stage {server_stage_index}...')
         server_stage_name_prefix = f'{stage['namePrefix']}-{server_stage_index}'
 
-        with open(f'{base_folder}/{out_folder}/{server_stage_name_prefix}.{fs['keyExt']}', 'w') as server_stage_key_file:
+        with open(f'{project_folder}/{tls_folder}/{server_stage_name_prefix}.{fs['keyExt']}', 'w') as server_stage_key_file:
             server_stage_key_file.write(
                 server_stage_key.private_bytes(
                     encoding=serialization.Encoding.PEM,
@@ -168,5 +174,5 @@ def create_tls_materials(base_folder, setup_config):
                 ).decode()
             )
 
-        with open(f'{base_folder}/{out_folder}/{server_stage_name_prefix}.{fs['certExt']}', 'w') as server_stage_cert_file:
+        with open(f'{project_folder}/{tls_folder}/{server_stage_name_prefix}.{fs['certExt']}', 'w') as server_stage_cert_file:
             server_stage_cert_file.write(server_stage_cert.public_bytes(serialization.Encoding.PEM).decode())

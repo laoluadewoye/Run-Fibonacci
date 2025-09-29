@@ -1,5 +1,4 @@
-from os.path import abspath, dirname, exists
-from os import mkdir
+from pathlib import Path
 from json import loads
 from subprocess import run
 from time import sleep
@@ -10,25 +9,24 @@ from GenerateCompose import create_compose
 
 if __name__ == '__main__':
     # Get base folder
-    BASE_FOLDER: str = abspath(dirname(__file__))
+    BASE_FOLDER = Path(__file__).resolve().parent
 
-    # Load configuration
-    with open('./setup_config.json') as setup_file:
+    # Get project folder
+    project_folder = Path(BASE_FOLDER).resolve().parent
+
+    # Load configuration from the project folder
+    with open(f'{project_folder}/setup_config.json') as setup_file:
         setup_config: dict = loads(setup_file.read())
 
         # Create subgroups to save space
         dns = setup_config['dns']
         fs = setup_config['fs']
 
-    # Create output folder
-    if not exists(f'{BASE_FOLDER}/{fs['outputFolder']}'):
-        mkdir(f'{BASE_FOLDER}/{fs['outputFolder']}')
-
     # Create keys and certificates
-    create_tls_materials(BASE_FOLDER, setup_config)
+    create_tls_materials(project_folder, setup_config)
 
     # Create Docker secrets and containers
-    create_compose(BASE_FOLDER, setup_config)
+    create_compose(BASE_FOLDER, project_folder, setup_config)
 
     # Run Compose File
     print('Running Docker Compose configuration...')
@@ -40,11 +38,11 @@ if __name__ == '__main__':
         sleep(1)
 
     starting_ap = dns['default']
-    starting_port = setup_config['platform']['port']
+    starting_port = setup_config['platform']['startPort']
 
-    external_key_fp = f'{BASE_FOLDER}/{fs['outputFolder']}/{dns['externalName']}.{fs['keyExt']}'
-    external_cert_fp = f'{BASE_FOLDER}/{fs['outputFolder']}/{dns['externalName']}.{fs['certExt']}'
-    external_ca_cert_fp = f'{BASE_FOLDER}/{fs['outputFolder']}/{dns['caName']}.{fs['certExt']}'
+    external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
+    external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
+    external_ca_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
 
     response = request(
         method='GET',

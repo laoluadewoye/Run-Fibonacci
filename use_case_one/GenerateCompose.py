@@ -1,13 +1,18 @@
-from pathlib import Path
+from os.path import exists
+from os import mkdir
 from json import dump
 
 
-def create_compose(base_folder, setup_config):
+def create_compose(base_folder, project_folder, setup_config):
     # Create subgroups to save space
     network = setup_config['platform']['network']
     stage = setup_config['stage']
     fs = setup_config['fs']
     envs = setup_config['envs']
+
+    # Create output folder
+    if not exists(f'{base_folder}/{fs['outputFolder']}'):
+        mkdir(f'{base_folder}/{fs['outputFolder']}')
 
     # Create start of json config
     compose_json: dict = {
@@ -36,11 +41,6 @@ def create_compose(base_folder, setup_config):
         for i in range(stage['count'])
     ]
 
-    # Create a proper path for getting the latest image version
-    print('Getting latest version of server image...')
-    latest_image_rel_fp = Path('../fibonacci_image/latest_image.adoc')
-    latest_image_true_fp = Path(base_folder).resolve().joinpath(latest_image_rel_fp).resolve()
-
     # Fill in services
     for i in range(stage['count']):
         server_stage_index = i + 1
@@ -60,7 +60,7 @@ def create_compose(base_folder, setup_config):
         compose_json['services'][server_stage_name] = {
             'hostname': server_stage_hostname,
             'extra_hosts': server_stage_mappings,
-            'image': open(latest_image_true_fp).read(),
+            'image': open(f'{project_folder}/{fs['imageVersionFp']}').read(),
             'restart': setup_config['platform']['restartPolicy'],
             'environment': {
                 'SERVER_STAGE_COUNT': stage['count'],
@@ -97,7 +97,7 @@ def create_compose(base_folder, setup_config):
     # Fill in secrets
     print(f'Defining secret {setup_config['dns']['caName']}-{fs['certExt']}...')
     compose_json['secrets'][f'{setup_config['dns']['caName']}-{fs['certExt']}'] = {
-        'file': f'{base_folder}/{fs['outputFolder']}/{setup_config['dns']['caName']}.{fs['certExt']}'
+        'file': f'{project_folder}/{fs['tlsFolder']}/{setup_config['dns']['caName']}.{fs['certExt']}'
     }
     for i in range(stage['count']):
         server_stage_index = i + 1
@@ -105,10 +105,10 @@ def create_compose(base_folder, setup_config):
         print(f'Defining secrets for {server_stage_name}...')
 
         compose_json['secrets'][f'{server_stage_name}-{fs['keyExt']}'] = {
-            'file': f'{base_folder}/{fs['outputFolder']}/{server_stage_name}.{fs['keyExt']}'
+            'file': f'{project_folder}/{fs['tlsFolder']}/{server_stage_name}.{fs['keyExt']}'
         }
         compose_json['secrets'][f'{server_stage_name}-{fs['certExt']}'] = {
-            'file': f'{base_folder}/{fs['outputFolder']}/{server_stage_name}.{fs['certExt']}'
+            'file': f'{project_folder}/{fs['tlsFolder']}/{server_stage_name}.{fs['certExt']}'
         }
 
     # Save json file

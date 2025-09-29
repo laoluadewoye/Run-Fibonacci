@@ -14,9 +14,11 @@
         "upperBound": 4000000000
     },
     "fs": {
+        "tlsFolder": "tls",
         "outputFolder": "output",
         "certExt": "crt",
-        "keyExt": "key"
+        "keyExt": "key",
+        "imageVersionFp": "fibonacci_image/latest_image.adoc"
     },
     "platform": {
         "network": {
