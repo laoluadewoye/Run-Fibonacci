@@ -34,9 +34,9 @@
         "startPort": 8080,
         "replicas": 3,
         "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
-        "containerRestartPolicy": "unless-stopped",
+        "containerRestartPolicy": "on-failure",
         "containerFailPolicy": "kill",
-        "podRestartPolicy": "Always"
+        "podRestartPolicy": "OnFailure"
     },
     "stage": {
         "composeNameSuffix": "app",

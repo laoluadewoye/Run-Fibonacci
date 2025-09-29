@@ -12,6 +12,9 @@ include::fibonacci_image/latest_image.adoc[]
 Use Case One Version:
 include::use_case_one/latest_program.adoc[]
 
+Use Case Two Version:
+include::use_case_two/latest_program.adoc[]
+
 == Explanation of Project Idea
 
 This test is a way for me to force myself to get more familiar with container technologies, including Docker, Podman, and Kubernetes. I needed an idea that would ensure that I would not be able to complete it unscathed, but not so hard that months would go by before I am able to finish the project.

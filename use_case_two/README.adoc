@@ -1,0 +1,36 @@
+= Fibonacci Message Passing with Podman
+:author: Laolu Adewoye
+:email: laoluadewoye@gmail.com>
+:description: Explains how the Podman use case works.
+:keywords:
+
+== Versioning
+
+Use Case One Version:
+include::latest_program.adoc[]
+
+=== Changelog
+
+include::changelog.adoc[]
+
+== Explanation of Use Case
+
+This use case seeks to show how the Project's architecture can be achieved using Podman. No special aspects of Podman, including Podman Compose were used to create this use case. Since Podman supports the creation everything needed through the podman core CLI, this example can show what it takes to manually create and scale down containers...through the automative process of Python scripts.
+
+image:../extra_materials/use_case_two_diagram.png["Diagram of Use Case in Podman from the component perspective. In the diagram, a person icon stands next to a set of loosely coupled container components that represents the Podman-ran application. There are six main boxes in two rows. The first row has four square boxes while the second row had two long and flat boxes. In the first row, each box represents a server stage. The order of boxes goes as follows: The first box is labeled server stage 1 and is light red. The second box is labeled server stage 2 and is light orange. The third box is labeled server stage dot dot dot and is light green. The fourth box is labeled server stage letter N and is light blue. Inside each server stage box are five smaller boxes that represent the fibonacci server image, the environmental variables, the host IP mappings, the container's network interface, and TLS secrets. Only the first server stage box has an additional port binding box that connects the server stage box to entities outside the Podman network, symbolizing how that server stage is made available to a user outside the Podman namespace. The second row of boxes represent the Podman network and the Podman secret store that the first row of boxes share. The Podman network box is red while the Podman secret store box is black."]
+
+The above image shows loosely coupled Podman objects connected together to create the fibonacci message passing application. The server stages represent independent, manually configured containers that share the same image and host mappings but have unique environmental variables, TLS secrets, and network interfaces. Podman is used to configure a custom network to connect the containers, and Podman's secret store is used to manage secrets for importing into containers. The first container is given a port binding so that outside entities, such as the user depicted to the side, can communicate with the first container's API.
+
+== Files Within Use Case Directory
+
+Outside the AsciiDoc files, there are a few important files within this use case directory.
+
+`Main.py` is the main file used to create the Podman-based setup. It is in charge of calling the TLS generation script then calling the Podman generation script. It will then start the message passing through the first server stage's start API.
+
+`GeneratePodman.py` is the Python file used the handle details about generating Podman objects. Since I am using the Podman CLI and not a configuration script, the program contains multiple `subprocess.run()` commands to call the Podman CLI. It has one constant for specifying the use case index.
+
+`RemovePodman.py` is the Python file used to remove all objects created by `GeneratePodman.py`. Keep in mind, it does not keep track of if you change any values in `../setup_config.json` so if you run the generation script, then change the JSON configuration, then run the Removal script, you might miss an item you wanted to delete.
+
+The outputs of the program are txt files commands used to create the objects in Podman. They have pretty formatting so that it's easy to review, and you can spoof it up a bit if you want to run them manually on your system. Container creation scripts get their own files while all other commands share a general file.
+
+To run this program, just run `Main.py` and you're good to go! When you're done, just run `RemovePodman.py`.
