@@ -66,6 +66,9 @@ There are two files that will be used across the entire project. The first is `s
 ... _default_
 .... **Definition** -> `dns` member key that specifies the default domain name for all entities.
 .... **Schema** -> JSON string
+... _defaultIP_
+.... **Definition** -> `dns` member key that specifies the default domain IP address for all entities.
+.... **Schema** -> JSON string
 ... _caName_
 .... **Definition** -> `dns` member key that specifies what CA items should be prefixed with.
 .... **Schema** -> JSON string
@@ -141,8 +144,17 @@ There are two files that will be used across the entire project. The first is `s
 ... _replicas_
 .... **Definition** -> `platform` member key that specifies the number of replica containers and pods to make in a given server stage.
 .... **Schema** -> JSON integer
-... _restartPolicy_
-.... **Definition** -> `platform` member key that specifies the restart policy for containers and pods.
+... _healthcheckCMD_
+.... **Definition** -> `platform` member key that specifies the command to run for a healthcheck.
+.... **Schema** -> JSON string
+... _containerRestartPolicy_
+.... **Definition** -> `platform` member key that specifies the restart policy for containers.
+.... **Schema** -> JSON string
+... _containerFailPolicy_
+.... **Definition** -> `platform` member key that specifies the health check failure policy for containers.
+.... **Schema** -> JSON string
+... _podRestartPolicy_
+.... **Definition** -> `platform` member key that specifies the restart policy for pods.
 .... **Schema** -> JSON string
 . _stage_
 .. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.

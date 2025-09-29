@@ -33,7 +33,7 @@ There are only two files in the use case folder outside the AsciiDocs. As TLS ge
 
 `Main.py` is the primary file to run to start this application. It handles top level calls to other Generation programs and starts the fibonacci message passing sequence.
 
-`GenerateCompose.py` is the secondary file specific to the use case. It is primarily response for dynamically generating the Docker Compose configuration to run and exporting it to a JSON file. Yes, by the way you can run Docker Compose configurations from JSON files.
+`GenerateCompose.py` is the secondary file specific to the use case. It is primarily response for dynamically generating the Docker Compose configuration to run and exporting it to a JSON file. Yes, by the way you can run Docker Compose configurations from JSON files. This file also contains use case specific constants at the top of the file.
 
 The output of the program (outside TLS stuff) is `docker-compose.json` in your chosen output folder (see project README) which is run by main to deploy the compose configuration to the Docker daemon.
 

@@ -6,9 +6,10 @@ from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from datetime import datetime, timedelta, timezone
+from ipaddress import ip_address
 
 
-def create_key_cert(subject, alt_names, cert_days, public_exponent, key_length, issuer_key=None,
+def create_key_cert(subject, san_names, san_ip, cert_days, public_exponent, key_length, issuer_key=None,
                     issuer_cert=None, is_ca=False, is_key_encrypter=False, is_cert_signer=False):
     # Create key
     key: RSAPrivateKey = rsa.generate_private_key(public_exponent=public_exponent, key_size=key_length)
@@ -29,22 +30,15 @@ def create_key_cert(subject, alt_names, cert_days, public_exponent, key_length, 
     cert = cert.not_valid_after(datetime.now(timezone.utc) + timedelta(days=cert_days))
 
     # Add extensions
-    cert = cert.add_extension(
-        x509.SubjectAlternativeName([x509.DNSName(cert_name) for cert_name in alt_names]),
-        critical=False
-    )
+    sans = [x509.DNSName(san_name) for san_name in san_names]
+    sans.append(x509.IPAddress(ip_address(san_ip)))
+    cert = cert.add_extension(x509.SubjectAlternativeName(sans), critical=False)
     cert = cert.add_extension(x509.BasicConstraints(ca=is_ca, path_length=None), critical=True)
     cert = cert.add_extension(
         x509.KeyUsage(
-            digital_signature=True,
-            content_commitment=False,
-            key_encipherment=is_key_encrypter,
-            data_encipherment=False,
-            key_agreement=False,
-            key_cert_sign=is_cert_signer,
-            crl_sign=True,
-            encipher_only=False,
-            decipher_only=False,
+            digital_signature=True, content_commitment=False, key_encipherment=is_key_encrypter,
+            data_encipherment=False, key_agreement=False, key_cert_sign=is_cert_signer, crl_sign=True,
+            encipher_only=False, decipher_only=False,
         ),
         critical=True
     )
@@ -89,12 +83,13 @@ def create_tls_materials(project_folder, setup_config):
     print('Creating CA TLS materials...')
     ca_cert_name: str = f'{dns['caName']}.{dns['domain']}'
     ca_alt_names = [ca_cert_name, dns['domain'], dns['default']]
+    ca_ip_addr: str = f'{network['prefix']}.{network['startAddress']}'
     ca_subject = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
         x509.NameAttribute(NameOID.COMMON_NAME, ca_cert_name),
     ])
     ca_key, ca_cert = create_key_cert(
-        subject=ca_subject, alt_names=ca_alt_names, cert_days=tls['cert']['validDaysCA'],
+        subject=ca_subject, san_names=ca_alt_names, san_ip=ca_ip_addr, cert_days=tls['cert']['validDaysCA'],
         public_exponent=tls['rsa']['publicExponent'], key_length=tls['rsa']['keyLength'], is_ca=True,
         is_cert_signer=True
     )
@@ -108,9 +103,9 @@ def create_tls_materials(project_folder, setup_config):
         x509.NameAttribute(NameOID.COMMON_NAME, external_cert_name),
     ])
     external_key, external_cert = create_key_cert(
-        subject=external_subject, alt_names=external_alt_names, cert_days=tls['cert']['validDaysLeaf'],
-        public_exponent=tls['rsa']['publicExponent'], key_length=tls['rsa']['keyLength'],
-        issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+        subject=external_subject, san_names=external_alt_names, san_ip=dns['defaultIP'],
+        cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
+        key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
     )
 
     # Save TLS materials for external communication
@@ -149,16 +144,16 @@ def create_tls_materials(project_folder, setup_config):
         server_stage_cert_name: str = f'{stage['namePrefix']}-{server_stage_index}.{dns['domain']}'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
         server_stage_alt_names = [
-            server_stage_cert_name, server_stage_ip_addr, dns['domain'], dns['default']
+            server_stage_cert_name, dns['domain'], dns['default']
         ]
         server_stage_subject = x509.Name([
             x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
             x509.NameAttribute(NameOID.COMMON_NAME, server_stage_cert_name),
         ])
         server_stage_key, server_stage_cert = create_key_cert(
-            subject=server_stage_subject, alt_names=server_stage_alt_names, cert_days=tls['cert']['validDaysLeaf'],
-            public_exponent=tls['rsa']['publicExponent'], key_length=tls['rsa']['keyLength'],
-            issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+            subject=server_stage_subject, san_names=server_stage_alt_names, san_ip=server_stage_ip_addr,
+            cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
+            key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
         )
 
         # Save server stage TLS information to file

@@ -3,6 +3,7 @@
         "countryInitials": "US",
         "domain": "fibonaccitest.com",
         "default": "localhost",
+        "defaultIP": "127.0.0.1",
         "caName": "ca",
         "externalName": "external"
     },
@@ -22,7 +23,7 @@
     },
     "platform": {
         "network": {
-            "name": "run-fib-one",
+            "name": "run-fib-network",
             "driver": "bridge",
             "subnet": "172.19.0.0/16",
             "range": "172.19.0.0/24",
@@ -32,7 +33,10 @@
         },
         "startPort": 8080,
         "replicas": 3,
-        "restartPolicy": "unless-stopped"
+        "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
+        "containerRestartPolicy": "unless-stopped",
+        "containerFailPolicy": "kill",
+        "podRestartPolicy": "Always"
     },
     "stage": {
         "composeNameSuffix": "app",

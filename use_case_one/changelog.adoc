@@ -1,6 +1,10 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.1
+a|* Use case ID is now governed by Python constant USE_CASE_NUM in GenerateCompose.py
+* Output JSON location is now governed by Python constant OUTPUT_JSON_NAME in GenerateCompose.py
+
 |Version 1.0.0
 a|* Initial project
 

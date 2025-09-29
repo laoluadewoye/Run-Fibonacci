@@ -3,6 +3,11 @@ from os import mkdir
 from json import dump
 
 
+# Constants
+USE_CASE_NUM: int = 1
+OUTPUT_JSON_NAME: str = 'docker-compose.json'
+
+
 def create_compose(base_folder, project_folder, setup_config):
     # Create subgroups to save space
     network = setup_config['platform']['network']
@@ -15,7 +20,7 @@ def create_compose(base_folder, project_folder, setup_config):
         mkdir(f'{base_folder}/{fs['outputFolder']}')
 
     # Create start of json config
-    compose_name = f"{stage['useCasePrefix']}-1-{stage['composeNameSuffix']}"
+    compose_name = f"{stage['useCasePrefix']}-{USE_CASE_NUM}-{stage['composeNameSuffix']}"
     compose_json: dict = {
         'name': compose_name,
         'services': {},
@@ -44,13 +49,13 @@ def create_compose(base_folder, project_folder, setup_config):
 
     # Fill in services
     for i in range(stage['count']):
+        # Create server stage information
         server_stage_index = i + 1
         server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
         server_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index}.{setup_config['dns']['domain']}'
 
-        print(f'Defining service {server_stage_name}...')
-
+        # Create the destination hostname
         if server_stage_index < stage['count']:
             dest_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index + 1}.{setup_config['dns']['domain']}'
         elif server_stage_index == stage['count']:
@@ -58,11 +63,13 @@ def create_compose(base_folder, project_folder, setup_config):
         else:
             raise IndexError(f'{server_stage_index} is invalid.')
 
+        # Create the service
+        print(f'Defining service {server_stage_name}...')
         compose_json['services'][server_stage_name] = {
             'hostname': server_stage_hostname,
             'extra_hosts': server_stage_mappings,
             'image': open(f'{project_folder}/{fs['imageVersionFp']}').read(),
-            'restart': setup_config['platform']['restartPolicy'],
+            'restart': setup_config['platform']['containerRestartPolicy'],
             'environment': {
                 'SERVER_STAGE_COUNT': stage['count'],
                 'SERVER_STAGE_INDEX': server_stage_index,
@@ -74,7 +81,7 @@ def create_compose(base_folder, project_folder, setup_config):
                 'DEST_ADDRESS': dest_stage_hostname,
                 'DEST_PORT': setup_config['platform']['startPort'],
                 'THROTTLE_INTERVAL': envs['throttleInterval'],
-                'UPPER_BOUND': envs['upperBound'],
+                'UPPER_BOUND': envs['upperBound']
             },
             'secrets': [
                 {'source': f'{server_stage_name}-{fs['keyExt']}', 'target': envs['selfKeyTarget']},
@@ -114,5 +121,5 @@ def create_compose(base_folder, project_folder, setup_config):
 
     # Save json file
     print('Saving compose definitions to json file...')
-    with open(f'{base_folder}/{fs['outputFolder']}/docker-compose.json', "w") as compose_file:
+    with open(f'{base_folder}/{fs['outputFolder']}/{OUTPUT_JSON_NAME}', 'w') as compose_file:
         dump(compose_json, compose_file, indent=4)
