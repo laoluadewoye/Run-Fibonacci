@@ -1,9 +1,24 @@
 {
     "dns": {
+        "countryInitials": "US",
         "domain": "fibonaccitest.com",
-        "default": "localhost"
+        "default": "localhost",
+        "caName": "ca",
+        "externalName": "external"
     },
-    "docker": {
+    "envs": {
+        "selfKeyTarget": "/run/secrets/self.key",
+        "selfCertTarget": "/run/secrets/self.crt",
+        "caCertTarget": "/run/secrets/ca.crt",
+        "throttleInterval": 5,
+        "upperBound": 4000000000
+    },
+    "fs": {
+        "outputFolder": "output",
+        "certExt": "crt",
+        "keyExt": "key"
+    },
+    "platform": {
         "network": {
             "name": "run-fib-one",
             "driver": "bridge",
@@ -11,21 +26,17 @@
             "range": "172.19.0.0/24",
             "gateway": "172.19.0.1",
             "prefix": "172.19.0",
-            "start": 10
-        }
-    },
-    "fs": {
-        "outputFolder": "output",
-        "external": {
-            "caCertName": "ca.crt",
-            "caKeyName": "ca.key",
-            "selfCertName": "external.crt",
-            "selfKeyName": "external.key"
-        }
+            "startAddress": 10
+        },
+        "port": 8080,
+        "restartPolicy": "unless-stopped"
     },
     "stage": {
+        "composeNameSuffix": "app",
         "count": 3,
-        "namePrefix": "server-stage"
+        "namePrefix": "server-stage",
+        "startDelay": 5,
+        "useCasePrefix": "use-case-1"
     },
     "tls": {
         "cert": {
