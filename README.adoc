@@ -15,13 +15,17 @@ include::use_case_one/latest_program.adoc[]
 Use Case Two Version:
 include::use_case_two/latest_program.adoc[]
 
+Use Case Three Version:
+include::use_case_three/latest_program.adoc[]
+
 == Required Software for Project
 
 . Docker (With Docker Compose)
 . Podman
-. Kubernetes (with NGINX Ingress and CNI Networking Plugin)
+. Kubernetes (with NGINX Ingress, CNI Networking Plugin, and Container Runtime that supports user namespaces)
+.. I personally use Minikube with the Hyper-V driver, CRI-O container runtime, and enabled addons
 . Helm
-. Python (3.13 is recommended)
+. Python
 .. Python Cryptography Library
 .. Python Pyyaml Library
 

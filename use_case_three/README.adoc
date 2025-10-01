@@ -1,0 +1,18 @@
+= Fibonacci Message Passing within Kubernetes Pods
+:author: Laolu Adewoye
+:email: laoluadewoye@gmail.com>
+:description: Explains how the first Kubernetes use case works.
+:keywords:
+
+== Versioning
+
+Use Case One Version:
+include::latest_program.adoc[]
+
+=== Changelog
+
+include::changelog.adoc[]
+
+== Explanation of Use Case
+
+This use case seeks to show how the Project's architecture can be achieved using Kubernetes Pods.

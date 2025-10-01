@@ -171,7 +171,7 @@ def create_chart(base_folder, project_folder, setup_config):
 
     # Create kubernetes namespace
     namespace_hook = {'stages': 'pre-install', 'weight': '-2', 'policy': 'hook-failed'}
-    namespace = create_namespace(use_case_name, general_level='restricted', hook=namespace_hook)
+    namespace = create_namespace(use_case_name, general_level='baseline', hook=namespace_hook)
     namespace_name = namespace['metadata']['name']
     print(f'Adding {TEMPLATE_FOLDER}/{namespace_name}.yaml...')
     with open(f'{template_folder}/{namespace_name}.yaml', 'w') as namespace_file:
@@ -255,7 +255,8 @@ def create_chart(base_folder, project_folder, setup_config):
         'protocol': 'TCP'
     }]
     network_policy = create_network_policy(
-        use_case_name, namespace_name, {'matchLabels': pod_labels}, dns['defaultIP'], port_bindings
+        use_case_name, namespace_name, {'matchLabels': pod_labels}, f'{dns['defaultIP']}/32',
+        port_bindings
     )
     print(f'Adding {TEMPLATE_FOLDER}/{network_policy['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{network_policy['metadata']['name']}.yaml', 'w') as network_policy_file:

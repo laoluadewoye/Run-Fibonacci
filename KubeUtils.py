@@ -147,11 +147,12 @@ def create_deployment(name, namespace_name, replica_count, pod_labels, restart_p
                     'volumes': [],
                     'securityContext': {
                         'runAsNonRoot': True,
+                        'runAsUser': 1000,
                         'seccompProfile': {
                             'type': 'RuntimeDefault'
                         }
                     },
-                    'hostUsers': False
+                    # 'hostUsers': False
                 }
             }
         }
@@ -181,7 +182,7 @@ def create_container(name, image_name, port_bindings, env_settings, mounts, prob
             'allowPrivilegeEscalation': False,
             'capabilities': {'drop': ['ALL'], 'add': ['NET_BIND_SERVICE']},
             'privileged': False,
-            'readOnlyRootFilesystem': True
+            'readOnlyRootFilesystem': False
         }
     }
 

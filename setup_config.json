@@ -10,10 +10,10 @@
         "startAPI": "/start"
     },
     "envs": {
-        "selfKeyTarget": "/run/secrets/self.key",
-        "selfCertTarget": "/run/secrets/self.crt",
-        "caCertTarget": "/run/secrets/ca.crt",
-        "tlsTarget": "/run/secrets",
+        "selfKeyTarget": "/secrets/self.key",
+        "selfCertTarget": "/secrets/self.crt",
+        "caCertTarget": "/secrets/ca.crt",
+        "tlsTarget": "/secrets",
         "throttleInterval": 5,
         "upperBound": 4000000000
     },
@@ -31,7 +31,7 @@
             "chartType": "application",
             "home": "https://github.com/laoluadewoye/Run-Fibonacci"
         },
-        "podRestartPolicy": "OnFailure",
+        "podRestartPolicy": "Always",
         "replicas": 3
     },
     "platform": {
