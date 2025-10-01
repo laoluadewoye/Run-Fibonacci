@@ -1,0 +1,50 @@
+from pathlib import Path
+from json import loads
+from time import sleep
+from requests import request
+from GenerateTLS import create_tls_materials
+from GeneratePods import create_chart
+
+
+if __name__ == '__main__':
+    # Get base folder
+    BASE_FOLDER = Path(__file__).resolve().parent
+
+    # Get project folder
+    project_folder = Path(BASE_FOLDER).resolve().parent
+
+    # Load configuration from the project folder
+    with open(f'{project_folder}/setup_config.json') as setup_file:
+        setup_config: dict = loads(setup_file.read())
+
+        # Create subgroups to save space
+        dns = setup_config['dns']
+        fs = setup_config['fs']
+
+    # Create keys and certificates
+    # create_tls_materials(project_folder, setup_config)
+
+    # Create Podman secrets and containers
+    create_chart(BASE_FOLDER, project_folder, setup_config)
+
+    # # Send a get request to the start API
+    # for i in range(setup_config['stage']['startDelay'], 0, -1):
+    #     print(f'Waiting {i} seconds to start sequence...')
+    #     sleep(1)
+    #
+    # starting_ap = dns['default']
+    # starting_port = setup_config['platform']['startPort']
+    #
+    # external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
+    # external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
+    # external_ca_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
+    #
+    # response = request(
+    #     method='GET',
+    #     url=f'https://{starting_ap}:{starting_port}/start',
+    #     cert=(external_cert_fp, external_key_fp),
+    #     verify=external_ca_cert_fp
+    # )
+    # print('Response status code:', response.status_code)
+    # print('Response contents:', response.json())
+    # print('Run the program RemovePodman.py to remove the containers once done with them.')

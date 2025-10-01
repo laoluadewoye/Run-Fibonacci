@@ -124,6 +124,27 @@ There are two files that will be used across the entire project. The first is `s
 ... _imageVersionFp_
 .... **Definition** -> `fs` member key that specifies the file that holds the fibonacci image version to use.
 .... **Schema** -> JSON string
+. _kube_
+.. **Definition** -> Top-level key that specifies information related to the settings to use for created kubernetes objects.
+.. **Schema** -> JSON Object that contains the following keys:
+... _helm_
+.... **Definition** -> `kube` member key that specifies information related to the settings for helm to use during chart application.
+.... **Schema** -> JSON Object that contains the following keys:
+..... _allowedKubeVersion_
+...... **Definition** -> `helm` member key that specifies the allowed kubernetes version for the helm chart.
+...... **Schema** -> JSON string
+..... _apiVersion_
+...... **Definition** -> `helm` member key that specifies the Helm API version to use.
+...... **Schema** -> JSON string
+..... _chartType_
+...... **Definition** -> `helm` member key that specifies the Helm Chart Type.
+...... **Schema** -> JSON string
+..... _home_
+...... **Definition** -> `helm` member key that specifies the home URL for the chart being deployed.
+...... **Schema** -> JSON string
+... _podRestartPolicy_
+.... **Definition** -> `kube` member key that specifies the restart policy for pods.
+.... **Schema** -> JSON string
 . _platform_
 .. **Definition** -> Top-level key that specifies information related to the settings to use for created container objects.
 .. **Schema** -> JSON Object that contains the following keys:
@@ -165,9 +186,6 @@ There are two files that will be used across the entire project. The first is `s
 .... **Schema** -> JSON string
 ... _containerFailPolicy_
 .... **Definition** -> `platform` member key that specifies the health check failure policy for containers.
-.... **Schema** -> JSON string
-... _podRestartPolicy_
-.... **Definition** -> `platform` member key that specifies the restart policy for pods.
 .... **Schema** -> JSON string
 . _stage_
 .. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.

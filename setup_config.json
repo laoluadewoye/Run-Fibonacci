@@ -21,6 +21,15 @@
         "keyExt": "key",
         "imageVersionFp": "fibonacci_image/latest_image.adoc"
     },
+    "kube": {
+        "helm": {
+            "allowedKubeVersion": ">= 1.30.0",
+            "apiVersion": "v2",
+            "chartType": "application",
+            "home": "https://github.com/laoluadewoye/Run-Fibonacci"
+        },
+        "podRestartPolicy": "OnFailure"
+    },
     "platform": {
         "network": {
             "name": "run-fib-network",
@@ -35,8 +44,7 @@
         "replicas": 3,
         "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
         "containerRestartPolicy": "on-failure",
-        "containerFailPolicy": "kill",
-        "podRestartPolicy": "OnFailure"
+        "containerFailPolicy": "kill"
     },
     "stage": {
         "composeNameSuffix": "app",
