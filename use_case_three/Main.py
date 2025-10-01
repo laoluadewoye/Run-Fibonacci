@@ -50,24 +50,42 @@ if __name__ == '__main__':
     print(f'Creating {release_name}...')
     run(['helm', 'install', release_name, f'{BASE_FOLDER}/{fs['outputFolder']}'])
 
-    # # Send a get request to the start API
-    # for i in range(setup_config['stage']['startDelay'], 0, -1):
-    #     print(f'Waiting {i} seconds to start sequence...')
-    #     sleep(1)
-    #
-    # starting_ap = dns['default']
-    # starting_port = setup_config['platform']['startPort']
-    #
-    # external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
-    # external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
-    # external_ca_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
-    #
-    # response = request(
-    #     method='GET',
-    #     url=f'https://{starting_ap}:{starting_port}/start',
-    #     cert=(external_cert_fp, external_key_fp),
-    #     verify=external_ca_cert_fp
-    # )
-    # print('Response status code:', response.status_code)
-    # print('Response contents:', response.json())
-    # print('Run the program RemovePodman.py to remove the containers once done with them.')
+    # Wait for the IP address of the ingress to appear
+    print(f'Waiting for {core_name}-ingress to get an IP address...')
+    command = (
+        "kubectl wait --for=jsonpath={.status.loadBalancer.ingress} " +
+        f"ingress/{core_name}-ingress -n {core_name}-namespace --timeout=60s"
+    )
+    run(command, shell=True)
+
+    # Parse out IP address
+    print(f'Obtaining updated {core_name}-ingress information...')
+    ingress_info = run(
+        ['kubectl', 'get', 'ingress', f'{core_name}-ingress', '-n', f'{core_name}-namespace', '-o', 'json'],
+        capture_output=True, text=True
+    )
+
+    # Send a get request to the start API
+    for i in range(setup_config['stage']['startDelay'], 0, -1):
+        print(f'Waiting {i} seconds to start sequence...')
+        sleep(1)
+
+    ingress_ip = loads(ingress_info.stdout)['status']['loadBalancer']['ingress'][0]['ip']
+    ingress_api = dns['startAPI']
+    ingress_headers = {"Host": dns['domain']}
+
+    external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
+    external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
+    external_ca_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
+
+    response = request(
+        method='GET',
+        url=f'https://{ingress_ip}{ingress_api}',
+        headers=ingress_headers,
+        cert=(external_cert_fp, external_key_fp),
+        verify=False
+    )
+    print('Response status code:', response.status_code)
+    print('Response contents:', response.json())
+    print('To remove the deployment, just uninstall the helm chart. '
+          'You will have to remove the namespace and admission policy manually through kubectl.')

@@ -33,7 +33,7 @@
             "home": "https://github.com/laoluadewoye/Run-Fibonacci"
         },
         "podRestartPolicy": "Always",
-        "replicas": 1
+        "replicas": 3
     },
     "platform": {
         "network": {
