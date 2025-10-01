@@ -4,6 +4,7 @@
         "domain": "fibonaccitest.com",
         "default": "localhost",
         "defaultIP": "127.0.0.1",
+        "defaultListeningIP": "0.0.0.0",
         "caName": "ca",
         "externalName": "external",
         "ingressName": "ingress",

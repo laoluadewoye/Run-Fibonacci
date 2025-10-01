@@ -152,7 +152,6 @@ def create_deployment(name, namespace_name, replica_count, pod_labels, restart_p
                             'type': 'RuntimeDefault'
                         }
                     },
-                    # 'hostUsers': False
                 }
             }
         }

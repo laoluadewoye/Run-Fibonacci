@@ -86,6 +86,9 @@ There are two files that will be used across the entire project. The first is `s
 ... _defaultIP_
 .... **Definition** -> `dns` member key that specifies the default domain IP address for all entities.
 .... **Schema** -> JSON string
+... _defaultListeningIP_
+.... **Definition** -> `dns` member key that specifies the default listening IP address for all entities.
+.... **Schema** -> JSON string
 ... _caName_
 .... **Definition** -> `dns` member key that specifies what CA items should be prefixed with.
 .... **Schema** -> JSON string
