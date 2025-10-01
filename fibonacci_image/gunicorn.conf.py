@@ -10,7 +10,7 @@ capture_output = True
 loglevel = 'debug'
 
 # Set listening socket
-bind = f'{environ.get('SELF_ADDRESS')}:{environ.get('SELF_PORT')}'
+bind = f'{environ.get('SELF_LISTENING_ADDRESS')}:{environ.get('SELF_PORT')}'
 
 # SSL Enabling; Default standard is TLSv2
 keyfile = environ.get('SECRET_KEY_TARGET')

@@ -4,7 +4,7 @@
 set -e
 
 # Print the destination socket
-echo "https://$SELF_ADDRESS:$SELF_PORT/healthcheck"
+echo "https://$SELF_HEALTHCHECK_ADDRESS:$SELF_PORT/healthcheck"
 
 # Send the information
 curl \
@@ -12,6 +12,6 @@ curl \
     --key "$SECRET_KEY_TARGET" \
     --cacert "$SECRET_CA_CERT_TARGET" \
     --request GET \
-    "https://$SELF_ADDRESS:$SELF_PORT/healthcheck"
+    "https://$SELF_HEALTHCHECK_ADDRESS:$SELF_PORT/healthcheck"
 
 set +e

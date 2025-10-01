@@ -103,8 +103,11 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 . _SERVER_STAGE_INDEX_
 .. **Definition** -> The server stage designator of the server in the test network.
 .. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT or equal to SERVER_STAGE_COUNT.
-. _SELF_ADDRESS_
-.. **Definition** -> The network address of the server in the test network.
+. _SELF_LISTENING_ADDRESS_
+.. **Definition** -> The network address the server binds to in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+. _SELF_HEALTHCHECK_ADDRESS_
+.. **Definition** -> The network address the server uses to call itself in the test network.
 .. **Schema** -> Must be either a IPv4 address or a FQDN.
 . _SELF_PORT_
 .. **Definition** -> The network port of the server in the test network.
