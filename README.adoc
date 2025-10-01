@@ -91,6 +91,9 @@ There are two files that will be used across the entire project. The first is `s
 ... _ingressName_
 .... **Definition** -> `dns` member key that specifies what ingress items should be prefixed with.
 .... **Schema** -> JSON string
+... _startAPI_
+.... **Definition** -> `dns` member key that specifies the location of the starting API.
+.... **Schema** -> JSON string
 . _envs_
 .. **Definition** -> Top-level key that specifies information related to environmental variables that isn't covered by other JSON keys.
 .. **Schema** -> JSON Object that contains the following keys:
@@ -102,6 +105,9 @@ There are two files that will be used across the entire project. The first is `s
 .... **Schema** -> JSON string
 ... _caCertTarget_
 .... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS CA certificate.
+.... **Schema** -> JSON string
+... _tlsTarget_
+.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS directory.
 .... **Schema** -> JSON string
 ... _throttleInterval_
 .... **Definition** -> `envs` member key that specifies the interval in seconds that a server should wait between receiving numbers and sending numbers.
@@ -148,6 +154,9 @@ There are two files that will be used across the entire project. The first is `s
 ... _podRestartPolicy_
 .... **Definition** -> `kube` member key that specifies the restart policy for pods.
 .... **Schema** -> JSON string
+... _replicas_
+.... **Definition** -> `kube` member key that specifies the number of replica pods to make for a given server stage.
+.... **Schema** -> JSON integer
 . _platform_
 .. **Definition** -> Top-level key that specifies information related to the settings to use for created container objects.
 .. **Schema** -> JSON Object that contains the following keys:
@@ -177,9 +186,6 @@ There are two files that will be used across the entire project. The first is `s
 ...... **Schema** -> JSON integer
 ... _startPort_
 .... **Definition** -> `platform` member key that specifies the starting non-privileged port number to assign to containers and pods in the network or network namespace.
-.... **Schema** -> JSON integer
-... _replicas_
-.... **Definition** -> `platform` member key that specifies the number of replica containers and pods to make in a given server stage.
 .... **Schema** -> JSON integer
 ... _healthcheckCMD_
 .... **Definition** -> `platform` member key that specifies the command to run for a healthcheck.
