@@ -5,7 +5,8 @@
         "default": "localhost",
         "defaultIP": "127.0.0.1",
         "caName": "ca",
-        "externalName": "external"
+        "externalName": "external",
+        "ingressName": "ingress"
     },
     "envs": {
         "selfKeyTarget": "/run/secrets/self.key",

@@ -94,6 +94,19 @@ def create_tls_materials(project_folder, setup_config):
         is_cert_signer=True
     )
 
+    # Generate ingress TLS materials
+    print('Creating ingress TLS materials...')
+    ingress_alt_names = [dns['domain'], dns['default']]
+    ingress_subject = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, 'US'),
+        x509.NameAttribute(NameOID.COMMON_NAME, dns['domain']),
+    ])
+    ingress_key, ingress_cert = create_key_cert(
+        subject=ingress_subject, san_names=ingress_alt_names, san_ip=dns['defaultIP'],
+        cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
+        key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+    )
+
     # Generate external TLS materials
     print('Creating external TLS materials...')
     external_cert_name: str = f'{dns['externalName']}.{dns['domain']}'
@@ -108,20 +121,7 @@ def create_tls_materials(project_folder, setup_config):
         key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
     )
 
-    # Save TLS materials for external communication
-    print('Saving external TLS materials...')
-    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['keyExt']}', 'w') as key_file:
-        key_file.write(
-            external_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ).decode()
-        )
-
-    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['certExt']}', 'w') as cert_file:
-        cert_file.write(external_cert.public_bytes(serialization.Encoding.PEM).decode())
-
+    # Save TLS materials for ingress, external, and CA
     print('Saving CA TLS materials...')
     with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['keyExt']}', 'w') as ca_key_file:
         ca_key_file.write(
@@ -134,6 +134,34 @@ def create_tls_materials(project_folder, setup_config):
 
     with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['certExt']}', 'w') as ca_cert_file:
         ca_cert_file.write(ca_cert.public_bytes(serialization.Encoding.PEM).decode())
+
+    print('Saving ingress TLS materials...')
+    with open(f'{project_folder}/{tls_folder}/{dns['ingressName']}.{fs['keyExt']}', 'w') as ingress_key_file:
+        ingress_key_file.write(
+            ingress_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode()
+        )
+
+    with open(f'{project_folder}/{tls_folder}/{dns['ingressName']}.{fs['certExt']}', 'w') as ingress_cert_file:
+        ingress_combined_certs = (f'{ingress_cert.public_bytes(serialization.Encoding.PEM).decode()}'
+                                  f'{ca_cert.public_bytes(serialization.Encoding.PEM).decode()}')
+        ingress_cert_file.write(ingress_combined_certs)
+
+    print('Saving external TLS materials...')
+    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['keyExt']}', 'w') as external_key_file:
+        external_key_file.write(
+            external_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode()
+        )
+
+    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['certExt']}', 'w') as external_cert_file:
+        external_cert_file.write(external_cert.public_bytes(serialization.Encoding.PEM).decode())
 
     # Generate server stage TLS materials
     for i in range(stage['count']):

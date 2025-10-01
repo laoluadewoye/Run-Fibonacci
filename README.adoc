@@ -88,6 +88,9 @@ There are two files that will be used across the entire project. The first is `s
 ... _externalName_
 .... **Definition** -> `dns` member key that specifies what external items should be prefixed with.
 .... **Schema** -> JSON string
+... _ingressName_
+.... **Definition** -> `dns` member key that specifies what ingress items should be prefixed with.
+.... **Schema** -> JSON string
 . _envs_
 .. **Definition** -> Top-level key that specifies information related to environmental variables that isn't covered by other JSON keys.
 .. **Schema** -> JSON Object that contains the following keys:
