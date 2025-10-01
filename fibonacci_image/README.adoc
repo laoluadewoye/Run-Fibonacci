@@ -17,7 +17,7 @@ include::changelog.adoc[]
 
 == Required software
 
-. Docker/Docker Desktop
+. Docker or Podman
 . OpenSSL
 . PowerShell or POSIX-compliant Shell
 . Curl

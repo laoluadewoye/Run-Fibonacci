@@ -1,6 +1,9 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.1
+a|* Updated environmental variables to line up with run-fibonacci:1.1.0
+
 |Version 1.0.0
 a|* Initial project
 

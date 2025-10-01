@@ -221,6 +221,9 @@ def create_ingress(name, namespace_name, ingress_class, ingress_hostname, ingres
         'metadata': {
             'name': f'{name}-ingress',
             'namespace': namespace_name,
+            'annotations': {
+                'nginx.ingress.kubernetes.io/backend-protocol': 'HTTPS'
+            }
         },
         'spec': {
             'ingressClassName': ingress_class,

@@ -136,7 +136,8 @@ def create_containers(base_folder, project_folder, setup_config):
         container_command.extend([
             '--env', f'SERVER_STAGE_COUNT={stage['count']}',
             '--env', f'SERVER_STAGE_INDEX={server_stage_index}',
-            '--env', f'SELF_ADDRESS={server_stage_ip_addr}',
+            '--env', f'SELF_LISTENING_ADDRESS={server_stage_ip_addr}',
+            '--env', f'SELF_HEALTHCHECK_ADDRESS={server_stage_ip_addr}',
             '--env', f'SELF_PORT={setup_config['platform']['startPort']}',
             '--env', f'SECRET_KEY_TARGET={envs['selfKeyTarget']}',
             '--env', f'SECRET_CERT_TARGET={envs['selfCertTarget']}',

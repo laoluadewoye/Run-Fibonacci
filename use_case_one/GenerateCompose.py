@@ -73,7 +73,8 @@ def create_compose(base_folder, project_folder, setup_config):
             'environment': {
                 'SERVER_STAGE_COUNT': stage['count'],
                 'SERVER_STAGE_INDEX': server_stage_index,
-                'SELF_ADDRESS': server_stage_ip_addr,
+                'SELF_LISTENING_ADDRESS': server_stage_ip_addr,
+                'SELF_HEALTHCHECK_ADDRESS': server_stage_ip_addr,
                 'SELF_PORT': setup_config['platform']['startPort'],
                 'SECRET_KEY_TARGET': envs['selfKeyTarget'],
                 'SECRET_CERT_TARGET': envs['selfCertTarget'],
