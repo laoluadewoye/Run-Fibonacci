@@ -5,16 +5,16 @@ set -e
 echo "Generating test TLS materials..."
 python TestGenTLS.py
 
-fileContent="$(cat ./latest_image.adoc)"
+fileContent="$(cat ../latest_image.adoc)"
 echo "Creating container using image $fileContent..."
 
 # Check if podman or docker are running
 if podman info > /dev/null 2>&1; then
-    echo "Podman engine is running. Using podman to run container..."
+    echo "Podman engine is running. Using Podman to run container..."
     engineCommand="podman"
     engineRunning=1
 elif docker info > /dev/null 2>&1; then
-    echo "Docker engine is running. Using docker to run container..."
+    echo "Docker engine is running. Using Docker to run container..."
     engineCommand="docker"
     engineRunning=1
 else
@@ -59,7 +59,7 @@ if [ $engineRunning -eq 0 ]; then
         --request GET \
         "https://localhost:8081/start"
 
-    echo "Done. Use Docker/Docker Desktop to stop and delete the container whenever you're done."
+    echo "Done. Use your container engine to stop and delete the container whenever you're done."
 fi
 
 set +e

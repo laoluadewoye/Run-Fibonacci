@@ -1,11 +1,12 @@
 from os.path import exists
 from os import mkdir
 from subprocess import run
+from pathlib import Path
 
 
-def run_secret_command(secret_label, secret_name, secret_location, general_commands_fp):
+def run_secret_command(secret_label: str, secret_name: str, secret_location: str, general_commands_fp: str) -> None:
     # Run the podman command
-    secret_command = [
+    secret_command: list[str] = [
         'podman', 'secret', 'create', '--replace=true', '--label', secret_label, secret_name, secret_location
     ]
     run(secret_command)
@@ -17,7 +18,8 @@ def run_secret_command(secret_label, secret_name, secret_location, general_comma
         compose_file.write(' '.join(secret_command).replace('--', '\n\t--'))
 
 
-def create_secrets(project_folder, stage, fs, dns, general_commands_fp, use_case_num):
+def create_secrets(project_folder: Path, stage: dict, fs: dict, dns: dict, general_commands_fp: str,
+                   use_case_num: int) -> None:
     # Create secret label
     secret_label: str = f'{stage["useCasePrefix"]}={use_case_num}'
 
@@ -32,8 +34,8 @@ def create_secrets(project_folder, stage, fs, dns, general_commands_fp, use_case
 
     # Create server stage secrets
     for i in range(stage['count']):
-        server_stage_index = i + 1
-        server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_index: int = i + 1
+        server_stage_name: str = f'{stage['namePrefix']}-{server_stage_index}'
 
         print(f'Defining secrets for {server_stage_name}...')
         run_secret_command(
@@ -50,13 +52,13 @@ def create_secrets(project_folder, stage, fs, dns, general_commands_fp, use_case
         )
 
 
-def create_containers(base_folder, project_folder, setup_config, use_case_num):
+def create_containers(base_folder: Path, project_folder: Path, setup_config: dict, use_case_num: int) -> None:
     # Create subgroups to save space
-    stage = setup_config['stage']
-    fs = setup_config['fs']
-    dns = setup_config['dns']
-    network = setup_config['platform']['network']
-    envs = setup_config['envs']
+    stage: dict = setup_config['stage']
+    fs: dict = setup_config['fs']
+    dns: dict = setup_config['dns']
+    network: dict = setup_config['platform']['network']
+    envs: dict = setup_config['envs']
 
     # Create output folder
     if not exists(f'{base_folder}/{fs['outputFolder']}'):
@@ -64,7 +66,7 @@ def create_containers(base_folder, project_folder, setup_config, use_case_num):
 
     # Create the network
     print('Defining network...')
-    network_command = [
+    network_command: list[str] = [
         'podman', 'network', 'create', '--label', f'{stage["useCasePrefix"]}={use_case_num}',
         '--driver', network['driver'], '--subnet', network['subnet'], '--ip-range', network['range'],
         '--gateway', network['gateway'], network['name']
@@ -73,7 +75,7 @@ def create_containers(base_folder, project_folder, setup_config, use_case_num):
 
     # Save command for container file
     print(f'Saving podman command for network {network['name']} to txt file...')
-    general_commands_fp = f'{base_folder}/{fs['outputFolder']}/{stage["useCasePrefix"]}-{use_case_num}-commands.txt'
+    general_commands_fp: str = f'{base_folder}/{fs['outputFolder']}/{stage["useCasePrefix"]}-{use_case_num}-commands.txt'
     with open(general_commands_fp, 'w') as compose_file:
         compose_file.write(' '.join(network_command).replace('--', '\n\t--'))
 
@@ -82,7 +84,7 @@ def create_containers(base_folder, project_folder, setup_config, use_case_num):
 
     # Create a list of host mappings
     print('Defining host mappings...')
-    server_stage_mappings = [
+    server_stage_mappings: list[str] = [
         f'{stage['namePrefix']}-{i + 1}.{setup_config['dns']['domain']}:{network['prefix']}.{network['startAddress'] + i + 1}'
         for i in range(stage['count'])
     ]
@@ -90,8 +92,8 @@ def create_containers(base_folder, project_folder, setup_config, use_case_num):
     # Create the containers
     for i in range(stage['count']):
         # Create server stage information
-        server_stage_index = i + 1
-        server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_index: int = i + 1
+        server_stage_name: str = f'{stage['namePrefix']}-{server_stage_index}'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
         server_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index}.{setup_config['dns']['domain']}'
 
@@ -105,7 +107,7 @@ def create_containers(base_folder, project_folder, setup_config, use_case_num):
 
         # Start the command creation
         print(f'Creating command script for container {server_stage_name}...')
-        container_command = ['podman', 'run', '--detach', '--network', network['name'], f'--ip={server_stage_ip_addr}']
+        container_command: list[str] = ['podman', 'run', '--detach', '--network', network['name'], f'--ip={server_stage_ip_addr}']
 
         # Add a label
         container_command.extend([

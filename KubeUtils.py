@@ -1,6 +1,7 @@
-def create_namespace(name, general_level='privileged', general_version='v1.34', enforce_level=None,
-                     enforce_version=None, audit_level=None, audit_version=None, warn_level=None, warn_version=None,
-                     hook=None):
+def create_namespace(name: str, general_level: str = 'privileged', general_version: str = 'v1.34',
+                     enforce_level: str = None, enforce_version: str = None, audit_level: str = None,
+                     audit_version: str = None, warn_level: str = None, warn_version: str = None,
+                     hook: dict = None) -> dict:
     # Set levels
     if enforce_level is None:
         enforce_level = general_level
@@ -42,8 +43,9 @@ def create_namespace(name, general_level='privileged', general_version='v1.34', 
     return namespace_config
 
 
-def create_validating_admission_policy(name, failure_policy, constraints, validations, validation_actions,
-                                       namespace_name, hook=None):
+def create_validating_admission_policy(name: str, failure_policy: str, constraints: dict, validations: list[dict],
+                                       validation_actions: list[str], namespace_name: str,
+                                       hook: dict = None) -> tuple[dict, dict]:
     # Create policy
     policy_config: dict = {
         'apiVersion': 'admissionregistration.k8s.io/v1',
@@ -89,9 +91,10 @@ def create_validating_admission_policy(name, failure_policy, constraints, valida
     return policy_config, policy_binding_config
 
 
-def create_secret(name, namespace_name, secret_type, secret_data, labels=None, is_encoded=True, is_immutable=True):
+def create_secret(name: str, namespace_name: str, secret_type: str, secret_data: dict, labels: dict = None,
+                  is_encoded: bool = True, is_immutable: bool = True) -> dict:
     # Create secret
-    secret_config = {
+    secret_config: dict = {
         'apiVersion': 'v1',
         'kind': 'Secret',
         'metadata': {
@@ -116,10 +119,10 @@ def create_secret(name, namespace_name, secret_type, secret_data, labels=None, i
     return secret_config
 
 
-def create_deployment(name, namespace_name, replica_count, pod_labels, restart_policy, node_selector=None,
-                      labels=None):
+def create_deployment(name: str, namespace_name: str, replica_count: int, pod_labels: dict, restart_policy: str,
+                      node_selector: dict = None, labels: dict = None) -> dict:
     # Create deployment
-    deployment_config = {
+    deployment_config: dict = {
         'apiVersion': 'apps/v1',
         'kind': 'Deployment',
         'metadata': {
@@ -159,7 +162,8 @@ def create_deployment(name, namespace_name, replica_count, pod_labels, restart_p
     return deployment_config
 
 
-def create_container(name, image_name, port_bindings, env_settings, mounts, probe_settings):
+def create_container(name: str, image_name: str, port_bindings: list[dict], env_settings: list[dict],
+                     mounts: list[dict], probe_settings: dict) -> dict:
     return {
         'name': name,
         'image': image_name,
@@ -176,13 +180,13 @@ def create_container(name, image_name, port_bindings, env_settings, mounts, prob
     }
 
 
-def create_secret_volume(name, secret_name):
+def create_secret_volume(name: str, secret_name: str) -> dict:
     return {'name': name, 'secret': {'secretName': secret_name}}
 
 
-def create_service(name, namespace_name, selector, ports, labels=None):
+def create_service(name: str, namespace_name: str, selector: dict, ports: list[dict], labels: dict = None) -> dict:
     # Create service
-    service_config = {
+    service_config: dict = {
         'apiVersion': 'v1',
         'kind': 'Service',
         'metadata': {
@@ -203,9 +207,10 @@ def create_service(name, namespace_name, selector, ports, labels=None):
     return service_config
 
 
-def create_ingress(name, namespace_name, ingress_class, ingress_hostname, ingress_secret, ingress_paths, labels=None):
+def create_ingress(name: str, namespace_name: str, ingress_class: str, ingress_hostname: str, ingress_secret: str,
+                   ingress_paths: list[dict], labels: dict = None) -> dict:
     # Create ingress
-    ingress_config = {
+    ingress_config: dict = {
         'apiVersion': 'networking.k8s.io/v1',
         'kind': 'Ingress',
         'metadata': {
@@ -238,7 +243,8 @@ def create_ingress(name, namespace_name, ingress_class, ingress_hostname, ingres
     return ingress_config
 
 
-def create_network_policy(name, namespace_name, pod_selector, external_ip, ports, labels=None):
+def create_network_policy(name: str, namespace_name: str, pod_selector: dict, external_ip: str, ports: list[dict],
+                          labels: dict = None) -> dict:
     # Create network policy
     network_policy_config: dict = {
         'apiVersion': 'networking.k8s.io/v1',

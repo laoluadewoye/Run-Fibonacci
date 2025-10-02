@@ -8,7 +8,7 @@ Write-Host "Converting PEM materials to PKCS12 materials for Windows..."
 openssl pkcs12 -export -in test_ca.crt -inkey test_ca.key -out test_ca.p12
 openssl pkcs12 -export -in test_self.crt -inkey test_self.key -out test_self.p12
 
-$fileContent = Get-Content "./latest_image.adoc"
+$fileContent = Get-Content "../latest_image.adoc"
 Write-Host "Creating container using image $fileContent..."
 
 # Check if docker or podman are running
@@ -20,11 +20,11 @@ $podmanRunning = ($LASTEXITCODE -eq 0)
 $engineRunning = 0
 $engineCommand = ""
 if ($dockerRunning) {
-    Write-Host "Docker engine is running. Using docker to run container..."
+    Write-Host "Docker engine is running. Using Docker to run container..."
     $engineRunning = 1
     $engineCommand = "docker"
 } elseif ($podmanRunning) {
-    Write-Host "Podman engine is running. Using podman to run container..."
+    Write-Host "Podman engine is running. Using Podman to run container..."
     $engineRunning = 1
     $engineCommand = "podman"
 }

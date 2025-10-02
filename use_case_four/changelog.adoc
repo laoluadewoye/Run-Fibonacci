@@ -1,6 +1,9 @@
 [cols="1,1"]
 |===
 
+|Version 1.1.0
+a|* Added typing to all relevant code.
+
 |Version 1.0.1
 a|* Altered the distinguishing of use cases to creating unique FQDNs for ingresses rather than changing the resource path.
 

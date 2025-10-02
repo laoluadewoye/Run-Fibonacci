@@ -1,22 +1,23 @@
 from os.path import exists
 from os import mkdir
 from json import dump
+from pathlib import Path
 
 
-def create_compose(base_folder, project_folder, setup_config, use_case_num):
+def create_compose(base_folder: Path, project_folder: Path, setup_config: dict, use_case_num: int) -> None:
     # Create subgroups to save space
-    network = setup_config['platform']['network']
-    dns = setup_config['dns']
-    stage = setup_config['stage']
-    fs = setup_config['fs']
-    envs = setup_config['envs']
+    network: dict = setup_config['platform']['network']
+    dns: dict = setup_config['dns']
+    stage: dict = setup_config['stage']
+    fs: dict = setup_config['fs']
+    envs: dict = setup_config['envs']
 
     # Create output folder
     if not exists(f'{base_folder}/{fs['outputFolder']}'):
         mkdir(f'{base_folder}/{fs['outputFolder']}')
 
     # Create start of json config
-    compose_name = f"{stage['useCasePrefix']}-{use_case_num}-{stage['composeNameSuffix']}"
+    compose_name: str = f"{stage['useCasePrefix']}-{use_case_num}-{stage['composeNameSuffix']}"
     compose_json: dict = {
         'name': compose_name,
         'services': {},
@@ -38,7 +39,7 @@ def create_compose(base_folder, project_folder, setup_config, use_case_num):
 
     # Create a list of host mappings
     print('Defining host mappings...')
-    server_stage_mappings = [
+    server_stage_mappings: list[str] = [
         f'{stage['namePrefix']}-{i + 1}.{dns['domain']}={network['prefix']}.{network['startAddress'] + i + 1}'
         for i in range(stage['count'])
     ]
@@ -46,8 +47,8 @@ def create_compose(base_folder, project_folder, setup_config, use_case_num):
     # Fill in services
     for i in range(stage['count']):
         # Create server stage information
-        server_stage_index = i + 1
-        server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_index: int = i + 1
+        server_stage_name: str = f'{stage['namePrefix']}-{server_stage_index}'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
         server_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index}.{dns['domain']}'
 
@@ -114,8 +115,8 @@ def create_compose(base_folder, project_folder, setup_config, use_case_num):
         'file': f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
     }
     for i in range(stage['count']):
-        server_stage_index = i + 1
-        server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_index: int = i + 1
+        server_stage_name: str = f'{stage['namePrefix']}-{server_stage_index}'
         print(f'Defining secrets for {server_stage_name}...')
 
         compose_json['secrets'][f'{server_stage_name}-{fs['keyExt']}'] = {

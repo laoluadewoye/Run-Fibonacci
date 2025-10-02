@@ -74,11 +74,15 @@ Here is a list of hardcoded details in the Dockerfile for the image. Feel free t
 
 `latest_image.adoc` is an AsciiDoc file used to hold the fully qualified name of the latest image.
 
-`test_image.ps1` is a PowerShell script used to test the image on Windows systems.
+`testing/test_image.ps1` is a PowerShell script used to test the image on Windows systems.
 
-`test_image.sh` is a Shell script used to test the image on Linux systems.
+`testing/test_image.sh` is a Shell script used to test the image on Linux systems.
 
-`TestGenTLS.py` is a Python script used to create the TLS materials for the test_image scripts.
+`testing/TestGenTLS.py` is a Python script used to create the TLS materials for the test_image scripts.
+
+`testing/remove_test.ps1` is a PowerShell script used to remove test items on Windows systems.
+
+`testing/remove_test.sh` is a Shell script used to remove test items on Linux systems.
 
 Note: For the test scripts, you will be on your own for scaling down the test. All that's created is a container and some TLS credential stuff though, so it should be easy.
 

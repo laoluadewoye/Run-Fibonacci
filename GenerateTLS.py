@@ -8,10 +8,12 @@ from cryptography import x509
 from cryptography.x509.oid import NameOID
 from datetime import datetime, timedelta, timezone
 from ipaddress import ip_address
+from pathlib import Path
 
 
-def create_key_cert(subject, san_names, san_ip, cert_days, public_exponent, key_length, issuer_key=None,
-                    issuer_cert=None, is_ca=False, is_key_encrypter=False, is_cert_signer=False):
+def create_key_cert(subject: x509.Name, san_names: list[str], san_ip: str, cert_days: int, public_exponent: int,
+                    key_length: int, issuer_key=None, issuer_cert=None, is_ca: bool = False,
+                    is_key_encrypter: bool = False, is_cert_signer: bool = False) -> tuple:
     # Create key
     key: RSAPrivateKey = rsa.generate_private_key(public_exponent=public_exponent, key_size=key_length)
 
@@ -67,14 +69,14 @@ def create_key_cert(subject, san_names, san_ip, cert_days, public_exponent, key_
     return key, cert
 
 
-def create_tls_materials(project_folder, setup_config):
+def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
     # Create subgroups to save space
-    dns = setup_config['dns']
-    tls = setup_config['tls']
-    fs = setup_config['fs']
-    tls_folder = setup_config['fs']['tlsFolder']
-    network = setup_config['platform']['network']
-    stage = setup_config['stage']
+    dns: dict = setup_config['dns']
+    tls: dict = setup_config['tls']
+    fs: dict = setup_config['fs']
+    tls_folder: dict = setup_config['fs']['tlsFolder']
+    network: dict = setup_config['platform']['network']
+    stage: dict = setup_config['stage']
 
     # Create TLS folder
     if exists(f'{project_folder}/{tls_folder}'):
@@ -84,9 +86,9 @@ def create_tls_materials(project_folder, setup_config):
     # Generate CA TLS materials
     print('Creating CA TLS materials...')
     ca_cert_name: str = f'{dns['caName']}.{dns['domain']}'
-    ca_alt_names = [ca_cert_name, dns['domain'], dns['default']]
+    ca_alt_names: list[str] = [ca_cert_name, dns['domain'], dns['default']]
     ca_ip_addr: str = f'{network['prefix']}.{network['startAddress']}'
-    ca_subject = x509.Name([
+    ca_subject: x509.Name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
         x509.NameAttribute(NameOID.COMMON_NAME, ca_cert_name),
     ])
@@ -98,8 +100,8 @@ def create_tls_materials(project_folder, setup_config):
 
     # Generate ingress TLS materials
     print('Creating ingress TLS materials...')
-    ingress_alt_names = [dns['domain'], dns['default'], f'v3.{dns['domain']}', f'v4.{dns['domain']}']
-    ingress_subject = x509.Name([
+    ingress_alt_names: list[str] = [dns['domain'], dns['default'], f'v3.{dns['domain']}', f'v4.{dns['domain']}']
+    ingress_subject: x509.Name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, 'US'),
         x509.NameAttribute(NameOID.COMMON_NAME, dns['domain']),
     ])
@@ -112,8 +114,8 @@ def create_tls_materials(project_folder, setup_config):
     # Generate external TLS materials
     print('Creating external TLS materials...')
     external_cert_name: str = f'{dns['externalName']}.{dns['domain']}'
-    external_alt_names = [external_cert_name, dns['domain'], dns['default']]
-    external_subject = x509.Name([
+    external_alt_names: list[str] = [external_cert_name, dns['domain'], dns['default']]
+    external_subject: x509.Name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
         x509.NameAttribute(NameOID.COMMON_NAME, external_cert_name),
     ])
@@ -174,10 +176,10 @@ def create_tls_materials(project_folder, setup_config):
         server_stage_cert_name: str = f'{stage['namePrefix']}-{server_stage_index}.{dns['domain']}'
         server_stage_service_name: str = f'{stage['namePrefix']}-{server_stage_index}-service'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
-        server_stage_alt_names = [
+        server_stage_alt_names: list[str] = [
             server_stage_cert_name, server_stage_service_name, dns['domain'], dns['default']
         ]
-        server_stage_subject = x509.Name([
+        server_stage_subject: x509.Name = x509.Name([
             x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
             x509.NameAttribute(NameOID.COMMON_NAME, server_stage_cert_name),
         ])
@@ -189,7 +191,7 @@ def create_tls_materials(project_folder, setup_config):
 
         # Save server stage TLS information to file
         print(f'Saving TLS materials for server stage {server_stage_index}...')
-        server_stage_name_prefix = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_name_prefix: str = f'{stage['namePrefix']}-{server_stage_index}'
 
         with open(f'{project_folder}/{tls_folder}/{server_stage_name_prefix}.{fs['keyExt']}', 'w') as server_stage_key_file:
             server_stage_key_file.write(

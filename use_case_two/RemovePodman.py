@@ -5,10 +5,10 @@ from subprocess import run
 
 if __name__ == '__main__':
     # Get base folder
-    BASE_FOLDER = Path(__file__).resolve().parent
+    BASE_FOLDER: Path = Path(__file__).resolve().parent
 
     # Get project folder
-    project_folder = Path(BASE_FOLDER).resolve().parent
+    project_folder: Path = Path(BASE_FOLDER).resolve().parent
 
     # Load configuration from the project folder
     with open(f'{project_folder}/setup_config.json') as setup_file:

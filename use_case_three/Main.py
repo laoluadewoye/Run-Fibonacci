@@ -1,8 +1,8 @@
 from pathlib import Path
 from json import loads
-from subprocess import run
+from subprocess import run, CompletedProcess
 from time import sleep
-from requests import request
+from requests import request, Response
 from GenerateTLS import create_tls_materials
 from GeneratePods import create_chart
 
@@ -12,19 +12,19 @@ if __name__ == '__main__':
     USE_CASE_NUM: int = 3
 
     # Get base folder
-    BASE_FOLDER = Path(__file__).resolve().parent
+    BASE_FOLDER: Path = Path(__file__).resolve().parent
 
     # Get project folder
-    project_folder = Path(BASE_FOLDER).resolve().parent
+    project_folder: Path = Path(BASE_FOLDER).resolve().parent
 
     # Load configuration from the project folder
     with open(f'{project_folder}/setup_config.json') as setup_file:
         setup_config: dict = loads(setup_file.read())
 
         # Create subgroups to save space
-        dns = setup_config['dns']
-        fs = setup_config['fs']
-        use_case_prefix = setup_config['stage']['useCasePrefix']
+        dns: dict = setup_config['dns']
+        fs: dict = setup_config['fs']
+        use_case_prefix: str = setup_config['stage']['useCasePrefix']
 
     # Create keys and certificates
     create_tls_materials(project_folder, setup_config)
@@ -33,11 +33,11 @@ if __name__ == '__main__':
     create_chart(BASE_FOLDER, project_folder, setup_config, USE_CASE_NUM)
 
     # Create a new Helm release
-    core_name = f'{use_case_prefix}-{USE_CASE_NUM}'
-    release_name = f'{core_name}-release'
+    core_name: str = f'{use_case_prefix}-{USE_CASE_NUM}'
+    release_name: str = f'{core_name}-release'
 
     print(f'Checking helm if {release_name} exists...')
-    existing_releases = run(['helm', 'list'], capture_output=True, text=True)
+    existing_releases: CompletedProcess = run(['helm', 'list'], capture_output=True, text=True)
     if release_name in existing_releases.stdout:
         print(f'Deleting {release_name}...')
         run(['helm', 'uninstall', release_name])
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     # Wait for the IP address of the ingress to appear
     print(f'Waiting for {core_name}-ingress to get an IP address...')
-    command = (
+    command: str = (
         "kubectl wait --for=jsonpath={.status.loadBalancer.ingress} " +
         f"ingress/{core_name}-ingress -n {core_name}-namespace --timeout=60s"
     )
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     # Parse out IP address
     print(f'Obtaining updated {core_name}-ingress information...')
-    ingress_info = run(
+    ingress_info: CompletedProcess = run(
         ['kubectl', 'get', 'ingress', f'{core_name}-ingress', '-n', f'{core_name}-namespace', '-o', 'json'],
         capture_output=True, text=True
     )
@@ -70,13 +70,13 @@ if __name__ == '__main__':
         print(f'Waiting {i} seconds to start sequence...')
         sleep(1)
 
-    ingress_ip = loads(ingress_info.stdout)['status']['loadBalancer']['ingress'][0]['ip']
+    ingress_ip: str = loads(ingress_info.stdout)['status']['loadBalancer']['ingress'][0]['ip']
 
-    external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
-    external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
-    external_ca_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
+    external_key_fp: str = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
+    external_cert_fp: str = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
+    external_ca_cert_fp: str = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
 
-    response = request(
+    response: Response = request(
         method='GET',
         url=f'https://{ingress_ip}{dns['startAPI']}',
         headers={"Host": f'v{USE_CASE_NUM}.{dns['domain']}'},

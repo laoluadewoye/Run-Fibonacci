@@ -3,11 +3,12 @@ from os.path import exists
 from os import mkdir
 from yaml import dump
 from KubeUtils import *
+from pathlib import Path
 
 
-def create_chart_items(base_folder, use_case_num, stage, fs, helm):
+def create_chart_items(base_folder: Path, use_case_num: int, stage: dict, fs: dict, helm: dict) -> None:
     # Create chart yaml configuration
-    chart_dict = {
+    chart_dict: dict = {
         'apiVersion': helm['apiVersion'],
         'name': f'{stage['useCasePrefix']}-{use_case_num}',
         'version': f'{open(f'{base_folder}/latest_program.adoc').read()}',
@@ -22,21 +23,18 @@ def create_chart_items(base_folder, use_case_num, stage, fs, helm):
         chart_file.write(dump(chart_dict))
 
 
-def create_helm_tls_file_function(tls_folder, tls_filename, tls_ext):
-    return (
-        '{{ .Files.Get "' + tls_folder + '/' +
-        f'{tls_filename}.{tls_ext}" | b64enc | quote ' + '}}'
-    )
+def create_helm_tls_file_function(tls_folder: str, tls_filename: str, tls_ext: str) -> str:
+    return '{{ .Files.Get "' + tls_folder + '/' + f'{tls_filename}.{tls_ext}" | b64enc | quote ' + '}}'
 
 
-def create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name, template_name, template_folder):
+def create_secret_templates(use_case_name: str, dns: dict, fs: dict, stage: dict, envs: dict, namespace_name: str,
+                            template_name: str, template_folder: str) -> None:
     # Create Ingress secrets
-    ingress_secret_data = {
+    ingress_secret_data: dict = {
         'tls.key': create_helm_tls_file_function(fs['tlsFolder'], dns['ingressName'], fs['keyExt']),
         'tls.crt': create_helm_tls_file_function(fs['tlsFolder'], dns['ingressName'], fs['certExt'])
     }
-
-    ingress_secret = create_secret(
+    ingress_secret: dict = create_secret(
         f'{use_case_name}-{dns['ingressName']}', namespace_name, 'kubernetes.io/TLS', ingress_secret_data
     )
     print(f'Adding {template_name}/{ingress_secret['metadata']['name']}.yaml...')
@@ -45,10 +43,10 @@ def create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name,
 
     # Create server stage secrets
     for i in range(stage['count']):
-        server_stage_index = i + 1
-        server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_index: int = i + 1
+        server_stage_name: str = f'{stage['namePrefix']}-{server_stage_index}'
 
-        server_stage_secret_data = {
+        server_stage_secret_data: dict = {
             f'{envs['selfName']}.{fs['keyExt']}': create_helm_tls_file_function(
                 fs['tlsFolder'], server_stage_name, fs['keyExt']
             ),
@@ -59,7 +57,7 @@ def create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name,
                 fs['tlsFolder'], dns['caName'], fs['certExt']
             ),
         }
-        server_stage_secret = create_secret(
+        server_stage_secret: dict = create_secret(
             server_stage_name, namespace_name, 'Opaque', server_stage_secret_data
         )
         print(f'Adding {template_name}/{server_stage_secret['metadata']['name']}.yaml...')
@@ -67,31 +65,33 @@ def create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name,
             server_stage_secret_file.write(dump(server_stage_secret).replace("'{", "{").replace("}'", "}"))
 
 
-def create_deployment_template(server_stage_index, name, namespace_name, replica_count, pod_labels, restart_policy,
-                               probe_settings, image_name, template_name, template_folder, platform, stage, dns, envs, fs, deploy_node_selector=None,
-                               deploy_labels=None):
+def create_deployment_template(server_stage_index: int, name: str, namespace_name: str, replica_count: int,
+                               pod_labels: dict, restart_policy: str, probe_settings: dict, image_name: str,
+                               template_name: str, template_folder: str, platform: dict, stage: dict, dns: dict,
+                               envs: dict, fs: dict, deploy_node_selector: dict = None,
+                               deploy_labels: dict = None) -> None:
     # Start deployment
-    deployment = create_deployment(
+    deployment: dict = create_deployment(
         name, namespace_name, replica_count, pod_labels, restart_policy,
         node_selector=deploy_node_selector, labels=deploy_labels
     )
 
     # Create port bindings
-    port_bindings = [{
+    port_bindings: list[dict] = [{
         'containerPort': platform['startPort'],
         'protocol': 'TCP'
     }]
 
     # Create destination service
     if server_stage_index < stage['count']:
-        dest_service = f'{stage['namePrefix']}-{server_stage_index + 1}-service'
+        dest_service: str = f'{stage['namePrefix']}-{server_stage_index + 1}-service'
     elif server_stage_index == stage['count']:
-        dest_service = f'{stage['namePrefix']}-1-service'
+        dest_service: str = f'{stage['namePrefix']}-1-service'
     else:
         raise IndexError(f'{server_stage_index} is invalid.')
 
     # Create environmental variables
-    env_settings = [
+    env_settings: list[dict] = [
         {'name': 'SERVER_STAGE_COUNT', 'value': f'{stage['count']}'},
         {'name': 'SERVER_STAGE_INDEX', 'value': f'{server_stage_index}'},
         {'name': 'SELF_LISTENING_ADDRESS', 'value': dns['defaultListeningIP']},
@@ -107,7 +107,7 @@ def create_deployment_template(server_stage_index, name, namespace_name, replica
     ]
 
     # Create volume mount
-    secret_mount = [{
+    secret_mount: list[dict] = [{
         'name': f'{name}-secret-mount',
         'mountPath': envs['tlsTarget'],
         'readOnly': True
@@ -127,15 +127,15 @@ def create_deployment_template(server_stage_index, name, namespace_name, replica
         deployment_file.write(dump(deployment))
 
 
-def create_chart(base_folder, project_folder, setup_config, use_case_num):
+def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, use_case_num: int) -> None:
     # Create subgroups to save space
-    stage = setup_config['stage']
-    fs = setup_config['fs']
-    helm = setup_config['kube']['helm']
-    dns = setup_config['dns']
-    kube = setup_config['kube']
-    platform = setup_config['platform']
-    envs = setup_config['envs']
+    stage: dict = setup_config['stage']
+    fs: dict = setup_config['fs']
+    helm: dict = setup_config['kube']['helm']
+    dns: dict = setup_config['dns']
+    kube: dict = setup_config['kube']
+    platform: dict = setup_config['platform']
+    envs: dict = setup_config['envs']
 
     # Create folders for chart items
     print('Setting up Helm chart folder...')
@@ -153,25 +153,25 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
     create_chart_items(base_folder, use_case_num, stage, fs, helm)
 
     # Set up variables for rest of method
-    use_case_name = f'{stage['useCasePrefix']}-{use_case_num}'
-    template_folder = f'{base_folder}/{fs['outputFolder']}/{helm['templateFolder']}'
-    image_name = open(f'{project_folder}/{fs['imageVersionFp']}').read()
+    use_case_name: str = f'{stage['useCasePrefix']}-{use_case_num}'
+    template_folder: str = f'{base_folder}/{fs['outputFolder']}/{helm['templateFolder']}'
+    image_name: str = open(f'{project_folder}/{fs['imageVersionFp']}').read()
 
     # Create kubernetes namespace
-    namespace_hook = {
+    namespace_hook: dict = {
         'helm.sh/hook': helm['hook'], 'helm.sh/hook-weight': '-2', 'helm.sh/hook-delete-policy': helm['hookPolicy']
     }
-    namespace = create_namespace(use_case_name, general_level=kube['namespacePolicy'], hook=namespace_hook)
-    namespace_name = namespace['metadata']['name']
+    namespace: dict = create_namespace(use_case_name, general_level=kube['namespacePolicy'], hook=namespace_hook)
+    namespace_name: str = namespace['metadata']['name']
     print(f'Adding {helm['templateFolder']}/{namespace_name}.yaml...')
     with open(f'{template_folder}/{namespace_name}.yaml', 'w') as namespace_file:
         namespace_file.write(dump(namespace))
 
     # Create admission policies
-    a_policy_hook = {
+    a_policy_hook: dict = {
         'helm.sh/hook': helm['hook'], 'helm.sh/hook-weight': '-1', 'helm.sh/hook-delete-policy': helm['hookPolicy']
     }
-    a_policy_constraints = {
+    a_policy_constraints: dict = {
         'resourceRules': [{
             'apiGroups': ['apps'],
             'apiVersions': ['v1'],
@@ -179,11 +179,11 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
             'resources': ['deployments']
         }]
     }
-    a_policy_validations = [{
+    a_policy_validations: list[dict] = [{
         'expression': f"object.spec.template.spec.containers.all(c, c.image == '{image_name}')",
         'message': f"Deployment containers can only use the image {image_name}."
     }]
-    a_policy_binding_valid_actions = ['Deny']
+    a_policy_binding_valid_actions: list[str] = ['Deny']
     a_policy, a_policy_binding = create_validating_admission_policy(
         use_case_name, 'Fail', a_policy_constraints, a_policy_validations, a_policy_binding_valid_actions,
         namespace_name, hook=a_policy_hook
@@ -201,10 +201,10 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
     create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder)
 
     # Loop through server stages
-    pod_labels = {
+    pod_labels: dict = {
         'app.kubernetes.io/name': f'{use_case_name}-app'
     }
-    probe_settings = {
+    probe_settings: dict = {
         'exec': {
             'command': [platform['healthcheckCMD']]
         },
@@ -215,8 +215,8 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
     }
 
     for i in range(stage['count']):
-        server_stage_index = i + 1
-        server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
+        server_stage_index: int = i + 1
+        server_stage_name: str = f'{stage['namePrefix']}-{server_stage_index}'
         pod_labels['app.kubernetes.io/component'] = server_stage_name
 
         # Create deployment
@@ -227,18 +227,18 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
         )
 
         # Create service
-        port_bindings = [{
+        port_bindings: list[dict] = [{
             'port': platform['startPort'],
             'protocol': 'TCP',
             'targetPort': platform['startPort']
         }]
-        service = create_service(server_stage_name, namespace_name, pod_labels, port_bindings)
+        service: dict = create_service(server_stage_name, namespace_name, pod_labels, port_bindings)
         print(f'Adding {helm['templateFolder']}/{service['metadata']['name']}.yaml...')
         with open(f'{template_folder}/{service['metadata']['name']}.yaml', 'w') as service_file:
             service_file.write(dump(service))
 
     # Create ingress
-    ingress_paths = [{
+    ingress_paths: list[dict] = [{
         'path': dns['startAPI'],
         'pathType': 'Exact',
         'backend': {
@@ -250,7 +250,7 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
             }
         }
     }]
-    ingress = create_ingress(
+    ingress: dict = create_ingress(
         use_case_name, namespace_name, 'nginx', f'v{use_case_num}.{dns['domain']}',
         f'{use_case_name}-{dns['ingressName']}-secret', ingress_paths
     )
@@ -259,16 +259,16 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
         ingress_file.write(dump(ingress))
 
     # Create network policy
-    port_bindings = [{
+    port_bindings: list[dict] = [{
         'port': platform['startPort'],
         'protocol': 'TCP'
     }]
-    network_selector = {
+    network_selector: dict = {
         'matchLabels': {
             'app.kubernetes.io/name': f'{use_case_name}-app'
         }
     }
-    network_policy = create_network_policy(
+    network_policy: dict = create_network_policy(
         use_case_name, namespace_name, network_selector, f'{dns['defaultIP']}/32', port_bindings
     )
     print(f'Adding {helm['templateFolder']}/{network_policy['metadata']['name']}.yaml...')
