@@ -15,4 +15,42 @@ include::changelog.adoc[]
 
 == Explanation of Use Case
 
-This use case seeks to show how the Project's architecture can be achieved using Kubernetes Pods.
+This use case seeks to show how the Project's architecture can be achieved using Kubernetes Pods. Pods can contain multiple containers, and this test is a test of if multiple servers can be run in a single pod and still maintain the same functionality as containers individually networked.
+
+image:../extra_materials/use_case_three_pod.png["A diagram of the message passing setup as a Kubernetes pod. All of the pod's contents are incased inside a lime green box that represents the pod's namespace. In the big green box are six smaller boxes, with four boxes arranged in a square surrounded by two other boxes. The boxes in the middle represent the server stages as containers inside the pod. Each server stage box contains four tiny boxes that represent the generic fibonacci server image, the enviornmental variables, the binding to one of the pod's ports, and a secret mount that uses a secret from set of secrets the pod makes available to the server stages. The outer box on the left is the network interface that all server stages will share. The outer box on the right is the pod secrets that all server stages access to retrieve their secrets."]
+
+This diagram showcases the inner workings of a Kubernetes pod. A container inside a kubernetes pod is different from a standalone container. Networking resources like IP addresses are attached to the pod, not the container. Multiple containers can be run inside a pod, so containers share the network interface. To differentiate between server stages, each server stage can bind to a specific port. That way, they can handle communications without getting in the way of other server stages.
+
+Kubernetes works through the applying of YAML configurations. Details such as environmental variables, the image to use, and the secrets to mount are specified in the YAML configuration among other pod details. The secrets are pulled from the larger Kubernetes namespace where the pods are kept. Once the pod is applied, the containers inside of it can run continue to pass fibonacci numbers between each other's ports. However, due to the complexity of Kubernetes it can be hard to track the pod among all the other objects in a Kubernetes cluster.
+
+image:../extra_materials/use_case_three_ns.png["A diagram of how Kubernetes Pods communicate with external users. The lime green boxes with smaller dark green and black boxes are simplified representations of the Kubernetes pod. There are four vertically stacked Kubernetes pods inside of a faded yellow box called a Kubernetes deployment. The deployment box is further encased in a beige brown box called a Kubernetes Admission Policy. To the right of the admission policy box is a black box labeled Kubernetes secrets, which are connected to the Kubernetes pods with black arrows. To the right of the admission policy box is another beige brown box called the Kubernetes network policy box, which further contains two faded yellow boxes called a Kubernetes Ingress and a Kubernetes Service respectively. The service box is connected to the Kubernetes pods with green arrows. All aformentioned boxes are encased in a large blue box called the Kubernetes namespace and security policy. The ingress box shares a left edge with this namespace box to symbolize how the ingress can access outside communication. The ingress is connected to an icon of a user with a green arrowed line."]
+
+To solve this problem, Kubernetes provides other objects that this use case takes advantage of to create a complete Kubernetes application. First, rather than individually creating Pods, a template of a pod can be defined using a Kubernetes deployment. This deployment defines what a pod should look like, and how many pods should be created inside the cluster among other things. This means that if individual pods fail, Kubernetes can take measures to replace the failed pods with fresh ones.
+
+This use case creates one deployment that can create as many copies of the pod displayed above as needed for load balancing access to the application and reducing stress on a single set of hardware. Furthermore, this use case defines an admission policy that sits around the deployment to ensure only images satisfying requirements such as using the latest version of the fibonacci image (which is currently
+include::../fibonacci_image/latest_image.adoc[]
+) to be created from the deployment specification.
+
+To pass secrets into the pod for further distribution between the server stages, a set of secrets is defined along with the deployment. Since each pod is a replica from the deployment template, pods share the set of secrets created.
+
+To network the pods while load balancing between them, this use case defines three different Kubernetes objects. The first object is a Kubernetes service that is responsible for exposing the pod's ports to any object outside the deployment that wants to talk to one of the pods. The second object is a Kubernetes ingress that connects the service to outside the Kubernetes cluster. Without the ingress, pods are unable to accept network traffic from outside the cluster.
+
+The last object defined is the Kubernetes network policy, which is a firewall-esque object that ensures that only expected sources of communication can access certain Pods. In reality the network policy sits around the pods, but this looked cooler ngl.
+
+Finally, a giant namespace sits around every aforementioned object. This namespace makes it easy to segment and manage Kubernetes items. For example, removing the use case from the cluster can be as easy as deleting the namespace, as that will also delete every object that was defined to belong to that namespace. In reality, this does not apply to the admission policy as admission policies are recognized as cluster-wide objects. They are connected to namespaces through binder objects and will remain after the namespace is gone.
+
+All that to say that the user does not communicate directly with the container when accessing the start API. The user will communicate with a Kubernetes ingress, which will then pass along the information down defined routes until it reaches a load-balanced replica pod to process what the user wanted.
+
+== Files Within Use Case Directory
+
+Outside the AsciiDocs, there are a few important files within this use case directory.
+
+`Main.py` is the entrypoint to the program. Creates the TLS materials and then creates the use case application using Helm-compatible syntax and chart structure.
+
+`GeneratePods.py` is the specific Python file dedicated to creating the YAML configurations for Kubernetes objects. It calls `KubeUtils.py` and provides the settings to generate the files for installation into the Kubernetes cluster.
+
+The output of these programs is a Helm chart located in the output folder. As Kubernetes is one step up from Docker in orchestrating container services, Helm is one step up from Kubernetes in managing Kubernetes objects. Helm defines Kubernetes configurations as templates, as the keys and values that are placed in the YAML files can be replaced with inline functions that allow further dynamic customization of a Kubernetes application. I utilized this feature to create secret configurations where I didn't have to hardcode the data into the file, as Helm will do it at installation time.
+
+Helm also keeps track of every Kubernetes object created from the chart, reducing the installation and uninstallation of the use case from a few commands to one. `Main.py` uses this to install everything at once.
+
+To run this program, just run `Main.py` and you're good to go! When you're done, just use Helm to uninstall the chart. However, to ensure that certain things are defined before certain other things, I defined some objects as Helm hooks to control the order of installation. `Main.py` will output what commands you need to write to uninstall everything fully at the end.

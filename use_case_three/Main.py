@@ -84,8 +84,14 @@ if __name__ == '__main__':
         headers=ingress_headers,
         cert=(external_cert_fp, external_key_fp),
         verify=False
+        # The above verify command is a current stop measure.
+        # The line below is the real parameter setting, but I'm getting self-signed certificate errors.
+        # verify=external_ca_cert_fp
     )
     print('Response status code:', response.status_code)
     print('Response contents:', response.json())
-    print('To remove the deployment, just uninstall the helm chart. '
-          'You will have to remove the namespace and admission policy manually through kubectl.')
+    print('To remove the deployment, run the following commands:')
+    print(f'\thelm uninstall {release_name}')
+    print(f'\tkubectl delete namespace {core_name}-namespace')
+    print(f'\tkubectl delete validatingadmissionpolicy {core_name}-admission-policy')
+    print(f'\tkubectl delete validatingadmissionpolicybinding {core_name}-admission-policy-binding')

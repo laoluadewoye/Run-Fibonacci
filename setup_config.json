@@ -52,7 +52,7 @@
     },
     "stage": {
         "composeNameSuffix": "app",
-        "count": 3,
+        "count": 4,
         "namePrefix": "server-stage",
         "startDelay": 5,
         "useCasePrefix": "use-case"
