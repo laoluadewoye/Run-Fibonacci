@@ -18,6 +18,9 @@ include::use_case_two/latest_program.adoc[]
 Use Case Three Version:
 include::use_case_three/latest_program.adoc[]
 
+Use Case Four Version:
+include::use_case_four/latest_program.adoc[]
+
 == Required Software for Project
 
 . Docker (With Docker Compose)
@@ -28,6 +31,18 @@ include::use_case_three/latest_program.adoc[]
 . Python
 .. Python Cryptography Library
 .. Python Pyyaml Library
+
+=== Note about Kubernetes Use Cases
+
+Everything is perfect about this project except for the very end of use cases three and four with the requests GET call. If you look into the `Main.py` files for these use cases, you will see that in the request call, the `verify` parameter used to feed a CA certificate to validate the certificates for the ingress is set to `False`. This is because at some point in the verification process when it's on, the call errors out due to a self-signed certificate error.
+
+I have spent a total a few hours looking into this issue. The tls.crt file I feed into the Kubernetes ingress is a certificate chain with the ingress certificate first and the CA certificate second. Now that certificate is self-signed, and I believe the issue is the inherent distrust systems have for self-signed certificates unless the certificate in question is placed in a certificate trust store.
+
+What is weird is that it only happens when the external host tries to connect to the Kubernetes ingress and nowhere else. The Gunicorn servers passing fibonacci numbers between each other do not seem to care. The Docker Compose setup and Podman setup runs without this error. The Pods inside the Kubernetes custer do not raise an issue. I have not had to place certificates in trust stores until now apparently.
+
+I have decided to let it be for now. It's a minor issue, and the minor part of a big project and the minor bit is emphasized by the fact that setting verify to false lets the entire thing run smoothly. While attempting to fix it may be fun, I fear it may involve changing my host PC unnecessarily or doing some fanangling that would get boring pretty quickly.
+
+I'm just putting this here in case anyone decides to look into the code and sees that weird setting so they have context.
 
 == Explanation of Project Idea
 

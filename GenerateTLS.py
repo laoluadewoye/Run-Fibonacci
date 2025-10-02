@@ -98,7 +98,7 @@ def create_tls_materials(project_folder, setup_config):
 
     # Generate ingress TLS materials
     print('Creating ingress TLS materials...')
-    ingress_alt_names = [dns['domain'], dns['default']]
+    ingress_alt_names = [dns['domain'], dns['default'], f'v3.{dns['domain']}', f'v4.{dns['domain']}']
     ingress_subject = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, 'US'),
         x509.NameAttribute(NameOID.COMMON_NAME, dns['domain']),

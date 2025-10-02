@@ -82,8 +82,8 @@ if __name__ == '__main__':
         headers={"Host": f'v{USE_CASE_NUM}.{dns['domain']}'},
         cert=(external_cert_fp, external_key_fp),
         verify=False
-        # The above verify command is a current stop measure.
-        # The line below is the real parameter setting, but I'm getting self-signed certificate errors.
+        # The above verify command is a current stop measure to avoid doing anything too complicated.
+        # The line below is the real parameter setting commented out. Switch if you wish to tackle it.
         # verify=external_ca_cert_fp
     )
     print('Response status code:', response.status_code)
