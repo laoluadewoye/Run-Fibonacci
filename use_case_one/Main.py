@@ -8,6 +8,9 @@ from GenerateCompose import create_compose
 
 
 if __name__ == '__main__':
+    # Constants
+    USE_CASE_NUM: int = 1
+
     # Get base folder
     BASE_FOLDER = Path(__file__).resolve().parent
 
@@ -26,10 +29,11 @@ if __name__ == '__main__':
     create_tls_materials(project_folder, setup_config)
 
     # Create Docker secrets and containers
-    create_compose(BASE_FOLDER, project_folder, setup_config)
+    create_compose(BASE_FOLDER, project_folder, setup_config, USE_CASE_NUM)
 
     # Run Compose File
     compose_file = f'{BASE_FOLDER}/{fs['outputFolder']}/{fs['composeOutput']}'
+    service_name = f'{setup_config['stage']['useCasePrefix']}-{USE_CASE_NUM}'
 
     print('Running Docker Compose configuration...')
     run(['docker', 'compose', '-f', compose_file, 'up', '-d'])
@@ -54,4 +58,4 @@ if __name__ == '__main__':
     )
     print('Response status code:', response.status_code)
     print('Response contents:', response.json())
-    print(f'Use the command "docker compose -f {compose_file} rm --stop --force" to remove the containers once done with them.')
+    print(f'Use the command "docker compose rm --stop --force {service_name}-" to remove the containers once done with them.')

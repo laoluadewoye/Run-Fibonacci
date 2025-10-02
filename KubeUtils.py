@@ -36,7 +36,7 @@ def create_namespace(name, general_level='privileged', general_version='v1.34', 
 
     # Check for hooks
     if hook is not None:
-        namespace_config['metadata']['annotations'] = {k:v for k, v in hook}
+        namespace_config['metadata']['annotations'] = {k:v for k, v in hook.items()}
 
     # Return namespace
     return namespace_config
@@ -82,8 +82,8 @@ def create_validating_admission_policy(name, failure_policy, constraints, valida
 
     # Check for hooks
     if hook is not None:
-        policy_config['metadata']['annotations'] = {k:v for k, v in hook}
-        policy_binding_config['metadata']['annotations'] = {k:v for k, v in hook}
+        policy_config['metadata']['annotations'] = {k:v for k, v in hook.items()}
+        policy_binding_config['metadata']['annotations'] = {k:v for k, v in hook.items()}
 
     # Return admission policy and admission policy binding
     return policy_config, policy_binding_config

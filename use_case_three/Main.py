@@ -30,7 +30,7 @@ if __name__ == '__main__':
     create_tls_materials(project_folder, setup_config)
 
     # Create Kubernetes Helm chart
-    create_chart(BASE_FOLDER, project_folder, setup_config)
+    create_chart(BASE_FOLDER, project_folder, setup_config, USE_CASE_NUM)
 
     # Create a new Helm release
     core_name = f'{use_case_prefix}-{USE_CASE_NUM}'

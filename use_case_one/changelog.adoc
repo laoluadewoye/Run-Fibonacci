@@ -1,6 +1,10 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.4
+a|* Added new end message in `Main.py`
+* Streamlined use of `USE_CASE_NUM`
+
 |Version 1.0.3
 a|* Updated scripts to use more configurations from `setup_config.json`
 * Updated final set of print lines in `Main.py`

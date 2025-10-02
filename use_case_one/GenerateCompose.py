@@ -3,11 +3,7 @@ from os import mkdir
 from json import dump
 
 
-# Constants
-USE_CASE_NUM: int = 1
-
-
-def create_compose(base_folder, project_folder, setup_config):
+def create_compose(base_folder, project_folder, setup_config, use_case_num):
     # Create subgroups to save space
     network = setup_config['platform']['network']
     dns = setup_config['dns']
@@ -20,7 +16,7 @@ def create_compose(base_folder, project_folder, setup_config):
         mkdir(f'{base_folder}/{fs['outputFolder']}')
 
     # Create start of json config
-    compose_name = f"{stage['useCasePrefix']}-{USE_CASE_NUM}-{stage['composeNameSuffix']}"
+    compose_name = f"{stage['useCasePrefix']}-{use_case_num}-{stage['composeNameSuffix']}"
     compose_json: dict = {
         'name': compose_name,
         'services': {},

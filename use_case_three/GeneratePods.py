@@ -5,15 +5,11 @@ from yaml import dump
 from KubeUtils import *
 
 
-# Constants
-USE_CASE_NUM: int = 3
-
-
-def create_chart_items(base_folder, stage, fs, helm):
+def create_chart_items(base_folder, use_case_num, stage, fs, helm):
     # Create chart yaml configuration
     chart_dict = {
         'apiVersion': helm['apiVersion'],
-        'name': f'{stage['useCasePrefix']}-{USE_CASE_NUM}',
+        'name': f'{stage['useCasePrefix']}-{use_case_num}',
         'version': f'{open(f'{base_folder}/latest_program.adoc').read()}',
         'kubeVersion': helm['allowedKubeVersion'],
         'type': helm['chartType'],
@@ -146,7 +142,7 @@ def create_deployment_template(name, namespace_name, replica_count, pod_labels, 
         server_stage_secret_file.write(dump(deployment))
 
 
-def create_chart(base_folder, project_folder, setup_config):
+def create_chart(base_folder, project_folder, setup_config, use_case_num):
     # Create subgroups to save space
     stage = setup_config['stage']
     fs = setup_config['fs']
@@ -169,10 +165,10 @@ def create_chart(base_folder, project_folder, setup_config):
     copytree(f'{project_folder}/{fs['tlsFolder']}', f'{base_folder}/{fs["outputFolder"]}/{fs['tlsFolder']}')
 
     # Create chart yaml file
-    create_chart_items(base_folder, stage, fs, helm)
+    create_chart_items(base_folder, use_case_num, stage, fs, helm)
 
     # Set up variables for rest of method
-    use_case_name = f'{stage['useCasePrefix']}-{USE_CASE_NUM}'
+    use_case_name = f'{stage['useCasePrefix']}-{use_case_num}'
     template_folder = f'{base_folder}/{fs['outputFolder']}/{helm['templateFolder']}'
     image_name = open(f'{project_folder}/{fs['imageVersionFp']}').read()
 
