@@ -65,7 +65,7 @@ Each use case has its own project folder that goes into more detail about how ea
 
 == Project-wide files
 
-There are two files that will be used across the entire project. The first is `setup_config.json`, which is a JSON file that holds the keys and values necessary to customize a use case. The second is `GenerateTLS.py`, which is a Python program that is used project-wide to generate the TLS keys and certificates necessary for encrypted communication.
+There are two files that will be used across the entire project. The first is `setup_config.json`, which is a JSON file that holds the keys and values necessary to customize a use case. The second is `GenerateTLS.py`, which is a Python program that is used project-wide to generate the TLS keys and certificates necessary for encrypted communication. The third is `KubeUtils.py`, which is a Python program that is used project-wide to generate configurations for various Kubernetes objects.
 
 `setup_config.json` contains dozens of keys that are accessed by the use cases. All keys are written in camelcase. The following section will explain the schema.
 
@@ -104,14 +104,8 @@ There are two files that will be used across the entire project. The first is `s
 . _envs_
 .. **Definition** -> Top-level key that specifies information related to environmental variables that isn't covered by other JSON keys.
 .. **Schema** -> JSON Object that contains the following keys:
-... _selfKeyTarget_
-.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS key.
-.... **Schema** -> JSON string
-... _selfCertTarget_
-.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS certificate.
-.... **Schema** -> JSON string
-... _caCertTarget_
-.... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS CA certificate.
+... _selfName_
+.... **Definition** -> `envs` member key that specifies what to call server TLS materials.
 .... **Schema** -> JSON string
 ... _tlsTarget_
 .... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS directory.
@@ -140,6 +134,9 @@ There are two files that will be used across the entire project. The first is `s
 ... _imageVersionFp_
 .... **Definition** -> `fs` member key that specifies the file that holds the fibonacci image version to use.
 .... **Schema** -> JSON string
+... _composeOutput_
+.... **Definition** -> `fs` member key that specifies the file that holds the output for use case one.
+.... **Schema** -> JSON string
 . _kube_
 .. **Definition** -> Top-level key that specifies information related to the settings to use for created kubernetes objects.
 .. **Schema** -> JSON Object that contains the following keys:
@@ -158,6 +155,18 @@ There are two files that will be used across the entire project. The first is `s
 ..... _home_
 ...... **Definition** -> `helm` member key that specifies the home URL for the chart being deployed.
 ...... **Schema** -> JSON string
+..... _hook_
+...... **Definition** -> `helm` member key that specifies the type of hook to use for helm chart templates.
+...... **Schema** -> JSON string
+..... _hookPolicy_
+...... **Definition** -> `helm` member key that specifies the policy to use when deciding to delete hooks.
+...... **Schema** -> JSON string
+..... _templateFolder_
+...... **Definition** -> `helm` member key that specifies the location of templates in a chart directory.
+...... **Schema** -> JSON string
+... _namespacePolicy_
+.... **Definition** -> `kube` member key that specifies the security policy for namespaces.
+.... **Schema** -> JSON string
 ... _podRestartPolicy_
 .... **Definition** -> `kube` member key that specifies the restart policy for pods.
 .... **Schema** -> JSON string

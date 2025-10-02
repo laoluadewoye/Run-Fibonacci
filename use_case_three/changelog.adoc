@@ -1,6 +1,12 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.1
+a|* Updated scripts to use more configurations from `setup_config.json`
+* Overhauled secret location settings to be more dynamic
+* Replaced usages of `TEMPLATE_FOLDER` constant with `setup_config.json` setting in `GeneratePods.py`
+* Changed how hooks are instantiated into `KubeUtil.py` generics
+
 |Version 1.0.0
 a|* Initial project
 

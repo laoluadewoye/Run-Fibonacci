@@ -29,8 +29,10 @@ if __name__ == '__main__':
     create_compose(BASE_FOLDER, project_folder, setup_config)
 
     # Run Compose File
+    compose_file = f'{BASE_FOLDER}/{fs['outputFolder']}/{fs['composeOutput']}'
+
     print('Running Docker Compose configuration...')
-    run(['docker-compose', '-f', f'{BASE_FOLDER}/{fs['outputFolder']}/docker-compose.json', 'up', '-d'])
+    run(['docker', 'compose', '-f', compose_file, 'up', '-d'])
 
     # Send a get request to the start API
     for i in range(setup_config['stage']['startDelay'], 0, -1):
@@ -46,10 +48,10 @@ if __name__ == '__main__':
 
     response = request(
         method='GET',
-        url=f'https://{starting_ap}:{starting_port}/start',
+        url=f'https://{starting_ap}:{starting_port}{dns['startAPI']}',
         cert=(external_cert_fp, external_key_fp),
         verify=external_ca_cert_fp
     )
     print('Response status code:', response.status_code)
     print('Response contents:', response.json())
-    print('Use the command "docker compose rm --stop --force" to remove the containers once done with them.')
+    print(f'Use the command "docker compose -f {compose_file} rm --stop --force" to remove the containers once done with them.')

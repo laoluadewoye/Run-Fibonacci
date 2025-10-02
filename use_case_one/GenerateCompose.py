@@ -5,12 +5,12 @@ from json import dump
 
 # Constants
 USE_CASE_NUM: int = 1
-OUTPUT_JSON_NAME: str = 'docker-compose.json'
 
 
 def create_compose(base_folder, project_folder, setup_config):
     # Create subgroups to save space
     network = setup_config['platform']['network']
+    dns = setup_config['dns']
     stage = setup_config['stage']
     fs = setup_config['fs']
     envs = setup_config['envs']
@@ -43,7 +43,7 @@ def create_compose(base_folder, project_folder, setup_config):
     # Create a list of host mappings
     print('Defining host mappings...')
     server_stage_mappings = [
-        f'{stage['namePrefix']}-{i + 1}.{setup_config['dns']['domain']}={network['prefix']}.{network['startAddress'] + i + 1}'
+        f'{stage['namePrefix']}-{i + 1}.{dns['domain']}={network['prefix']}.{network['startAddress'] + i + 1}'
         for i in range(stage['count'])
     ]
 
@@ -53,13 +53,13 @@ def create_compose(base_folder, project_folder, setup_config):
         server_stage_index = i + 1
         server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
-        server_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index}.{setup_config['dns']['domain']}'
+        server_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index}.{dns['domain']}'
 
         # Create the destination hostname
         if server_stage_index < stage['count']:
-            dest_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index + 1}.{setup_config['dns']['domain']}'
+            dest_stage_hostname: str = f'{stage['namePrefix']}-{server_stage_index + 1}.{dns['domain']}'
         elif server_stage_index == stage['count']:
-            dest_stage_hostname: str = f'{stage['namePrefix']}-1.{setup_config['dns']['domain']}'
+            dest_stage_hostname: str = f'{stage['namePrefix']}-1.{dns['domain']}'
         else:
             raise IndexError(f'{server_stage_index} is invalid.')
 
@@ -76,18 +76,27 @@ def create_compose(base_folder, project_folder, setup_config):
                 'SELF_LISTENING_ADDRESS': server_stage_ip_addr,
                 'SELF_HEALTHCHECK_ADDRESS': server_stage_ip_addr,
                 'SELF_PORT': setup_config['platform']['startPort'],
-                'SECRET_KEY_TARGET': envs['selfKeyTarget'],
-                'SECRET_CERT_TARGET': envs['selfCertTarget'],
-                'SECRET_CA_CERT_TARGET': envs['caCertTarget'],
+                'SECRET_KEY_TARGET': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}',
+                'SECRET_CERT_TARGET': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}',
+                'SECRET_CA_CERT_TARGET': f'{envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}',
                 'DEST_ADDRESS': dest_stage_hostname,
                 'DEST_PORT': setup_config['platform']['startPort'],
                 'THROTTLE_INTERVAL': envs['throttleInterval'],
                 'UPPER_BOUND': envs['upperBound']
             },
             'secrets': [
-                {'source': f'{server_stage_name}-{fs['keyExt']}', 'target': envs['selfKeyTarget']},
-                {'source': f'{server_stage_name}-{fs['certExt']}', 'target': envs['selfCertTarget']},
-                {'source': f'{setup_config['dns']['caName']}-{fs['certExt']}', 'target': envs['caCertTarget']},
+                {
+                    'source': f'{server_stage_name}-{fs['keyExt']}',
+                    'target': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}'
+                },
+                {
+                    'source': f'{server_stage_name}-{fs['certExt']}',
+                    'target': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}'
+                },
+                {
+                    'source': f'{dns['caName']}-{fs['certExt']}',
+                    'target': f'{envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}'
+                },
             ],
             'networks': {
                 network['name']: {
@@ -104,9 +113,9 @@ def create_compose(base_folder, project_folder, setup_config):
             ]
 
     # Fill in secrets
-    print(f'Defining secret {setup_config['dns']['caName']}-{fs['certExt']}...')
-    compose_json['secrets'][f'{setup_config['dns']['caName']}-{fs['certExt']}'] = {
-        'file': f'{project_folder}/{fs['tlsFolder']}/{setup_config['dns']['caName']}.{fs['certExt']}'
+    print(f'Defining secret {dns['caName']}-{fs['certExt']}...')
+    compose_json['secrets'][f'{dns['caName']}-{fs['certExt']}'] = {
+        'file': f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'
     }
     for i in range(stage['count']):
         server_stage_index = i + 1
@@ -122,5 +131,5 @@ def create_compose(base_folder, project_folder, setup_config):
 
     # Save json file
     print('Saving compose definitions to json file...')
-    with open(f'{base_folder}/{fs['outputFolder']}/{OUTPUT_JSON_NAME}', 'w') as compose_file:
+    with open(f'{base_folder}/{fs['outputFolder']}/{fs['composeOutput']}', 'w') as compose_file:
         dump(compose_json, compose_file, indent=4)

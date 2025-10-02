@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     response = request(
         method='GET',
-        url=f'https://{starting_ap}:{starting_port}/start',
+        url=f'https://{starting_ap}:{starting_port}{dns['startAPI']}',
         cert=(external_cert_fp, external_key_fp),
         verify=external_ca_cert_fp
     )

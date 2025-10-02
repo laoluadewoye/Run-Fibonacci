@@ -126,9 +126,12 @@ def create_containers(base_folder, project_folder, setup_config):
         # Add secrets
         print(f'Defining secrets for container {server_stage_name}...')
         container_command.extend([
-            '--secret', f'{server_stage_name}-{fs['keyExt']},target={envs['selfKeyTarget']}',
-            '--secret', f'{server_stage_name}-{fs['certExt']},target={envs['selfCertTarget']}',
-            '--secret', f'{setup_config['dns']['caName']}-{fs['certExt']},target={envs['caCertTarget']}'
+            '--secret',
+            f'{server_stage_name}-{fs['keyExt']},target={envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}',
+            '--secret',
+            f'{server_stage_name}-{fs['certExt']},target={envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}',
+            '--secret',
+            f'{setup_config['dns']['caName']}-{fs['certExt']},target={envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}'
         ])
 
         # Add environmental variables
@@ -139,9 +142,9 @@ def create_containers(base_folder, project_folder, setup_config):
             '--env', f'SELF_LISTENING_ADDRESS={server_stage_ip_addr}',
             '--env', f'SELF_HEALTHCHECK_ADDRESS={server_stage_ip_addr}',
             '--env', f'SELF_PORT={setup_config['platform']['startPort']}',
-            '--env', f'SECRET_KEY_TARGET={envs['selfKeyTarget']}',
-            '--env', f'SECRET_CERT_TARGET={envs['selfCertTarget']}',
-            '--env', f'SECRET_CA_CERT_TARGET={envs['caCertTarget']}',
+            '--env', f'SECRET_KEY_TARGET={envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}',
+            '--env', f'SECRET_CERT_TARGET={envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}',
+            '--env', f'SECRET_CA_CERT_TARGET={envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}',
             '--env', f'DEST_ADDRESS={dest_stage_hostname}',
             '--env', f'DEST_PORT={setup_config['platform']['startPort']}',
             '--env', f'THROTTLE_INTERVAL={envs['throttleInterval']}',

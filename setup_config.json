@@ -11,9 +11,7 @@
         "startAPI": "/start"
     },
     "envs": {
-        "selfKeyTarget": "/secrets/self.key",
-        "selfCertTarget": "/secrets/self.crt",
-        "caCertTarget": "/secrets/ca.crt",
+        "selfName": "self",
         "tlsTarget": "/secrets",
         "throttleInterval": 5,
         "upperBound": 4000000000
@@ -23,15 +21,20 @@
         "outputFolder": "output",
         "certExt": "crt",
         "keyExt": "key",
-        "imageVersionFp": "fibonacci_image/latest_image.adoc"
+        "imageVersionFp": "fibonacci_image/latest_image.adoc",
+        "composeOutput": "docker-compose.json"
     },
     "kube": {
         "helm": {
             "allowedKubeVersion": ">= 1.30.0",
             "apiVersion": "v2",
             "chartType": "application",
-            "home": "https://github.com/laoluadewoye/Run-Fibonacci"
+            "home": "https://github.com/laoluadewoye/Run-Fibonacci",
+            "hook": "pre-install",
+            "hookPolicy": "hook-failed",
+            "templateFolder": "templates"
         },
+        "namespacePolicy": "baseline",
         "podRestartPolicy": "Always",
         "replicas": 3
     },

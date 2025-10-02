@@ -6,7 +6,8 @@ from KubeUtils import *
 
 
 # Constants
-USE_CASE_NUM: int = 3
+USE_CASE_NUM: int = 4
+TEMPLATE_FOLDER: str = 'templates'
 
 
 def create_chart_items(base_folder, stage, fs, helm):
@@ -33,7 +34,7 @@ def create_helm_tls_file_function(tls_folder, tls_filename, tls_ext):
     )
 
 
-def create_secret_templates(dns, fs, stage, envs, namespace_name, template_name, template_folder):
+def create_secret_templates(dns, fs, stage, namespace_name, template_folder):
     # Create Ingress secrets
     ingress_secret_data = {
         'tls.key': create_helm_tls_file_function(fs['tlsFolder'], dns['ingressName'], fs['keyExt']),
@@ -42,7 +43,7 @@ def create_secret_templates(dns, fs, stage, envs, namespace_name, template_name,
     ingress_secret = create_secret(
         dns['ingressName'], namespace_name, 'kubernetes.io/TLS', ingress_secret_data
     )
-    print(f'Adding {template_name}/{ingress_secret['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{ingress_secret['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{ingress_secret['metadata']['name']}.yaml', 'w') as ingress_secret_file:
         ingress_secret_file.write(dump(ingress_secret).replace("'{", "{").replace("}'", "}"))
 
@@ -52,27 +53,20 @@ def create_secret_templates(dns, fs, stage, envs, namespace_name, template_name,
         server_stage_name = f'{stage['namePrefix']}-{server_stage_index}'
 
         server_stage_secret_data = {
-            f'{envs['selfName']}.{fs['keyExt']}': create_helm_tls_file_function(
-                fs['tlsFolder'], server_stage_name, fs['keyExt']
-            ),
-            f'{envs['selfName']}.{fs['certExt']}': create_helm_tls_file_function(
-                fs['tlsFolder'], server_stage_name, fs['certExt']
-            ),
-            f'{dns['caName']}.{fs['certExt']}': create_helm_tls_file_function(
-                fs['tlsFolder'], dns['caName'], fs['certExt']
-            ),
+            'self.key': create_helm_tls_file_function(fs['tlsFolder'], server_stage_name, fs['keyExt']),
+            'self.crt': create_helm_tls_file_function(fs['tlsFolder'], server_stage_name, fs['certExt']),
+            'ca.crt': create_helm_tls_file_function(fs['tlsFolder'], dns['caName'], fs['certExt']),
         }
         server_stage_secret = create_secret(
             server_stage_name, namespace_name, 'Opaque', server_stage_secret_data
         )
-        print(f'Adding {template_name}/{server_stage_secret['metadata']['name']}.yaml...')
+        print(f'Adding {TEMPLATE_FOLDER}/{server_stage_secret['metadata']['name']}.yaml...')
         with open(f'{template_folder}/{server_stage_secret['metadata']['name']}.yaml', 'w') as server_stage_secret_file:
             server_stage_secret_file.write(dump(server_stage_secret).replace("'{", "{").replace("}'", "}"))
 
 
 def create_deployment_template(name, namespace_name, replica_count, pod_labels, restart_policy, image_name, stage,
-                               platform, dns, envs, fs, template_name, template_folder, deploy_node_selector=None,
-                               deploy_labels=None):
+                               platform, dns, envs, template_folder, deploy_node_selector=None, deploy_labels=None):
     # Start configuration
     deployment = create_deployment(
         name, namespace_name, replica_count, pod_labels, restart_policy,
@@ -116,9 +110,9 @@ def create_deployment_template(name, namespace_name, replica_count, pod_labels, 
             {'name': 'SELF_LISTENING_ADDRESS', 'value': dns['defaultListeningIP']},
             {'name': 'SELF_HEALTHCHECK_ADDRESS', 'value': dns['default']},
             {'name': 'SELF_PORT', 'value': f'{platform['startPort'] + server_stage_index}'},
-            {'name': 'SECRET_KEY_TARGET', 'value': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}'},
-            {'name': 'SECRET_CERT_TARGET', 'value': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}'},
-            {'name': 'SECRET_CA_CERT_TARGET', 'value': f'{envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}'},
+            {'name': 'SECRET_KEY_TARGET', 'value': envs['selfKeyTarget']},
+            {'name': 'SECRET_CERT_TARGET', 'value': envs['selfCertTarget']},
+            {'name': 'SECRET_CA_CERT_TARGET', 'value': envs['caCertTarget']},
             {'name': 'DEST_ADDRESS', 'value': dns['default']},
             {'name': 'DEST_PORT', 'value': f'{dest_port}'},
             {'name': 'THROTTLE_INTERVAL', 'value': f'{envs['throttleInterval']}'},
@@ -141,7 +135,7 @@ def create_deployment_template(name, namespace_name, replica_count, pod_labels, 
         )
 
     # Save deployment
-    print(f'Adding {template_name}/{deployment['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{deployment['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{deployment['metadata']['name']}.yaml', 'w') as server_stage_secret_file:
         server_stage_secret_file.write(dump(deployment))
 
@@ -160,8 +154,8 @@ def create_chart(base_folder, project_folder, setup_config):
     print('Setting up Helm chart folder...')
     if not exists(f'{base_folder}/{fs['outputFolder']}'):
         mkdir(f'{base_folder}/{fs['outputFolder']}')
-    if not exists(f'{base_folder}/{fs['outputFolder']}/{helm['templateFolder']}'):
-        mkdir(f'{base_folder}/{fs['outputFolder']}/{helm['templateFolder']}')
+    if not exists(f'{base_folder}/{fs['outputFolder']}/{TEMPLATE_FOLDER}'):
+        mkdir(f'{base_folder}/{fs['outputFolder']}/{TEMPLATE_FOLDER}')
 
     print('Copying TLS materials into chart folder...')
     if exists(f'{base_folder}/{fs['outputFolder']}/{fs['tlsFolder']}'):
@@ -173,23 +167,19 @@ def create_chart(base_folder, project_folder, setup_config):
 
     # Set up variables for rest of method
     use_case_name = f'{stage['useCasePrefix']}-{USE_CASE_NUM}'
-    template_folder = f'{base_folder}/{fs['outputFolder']}/{helm['templateFolder']}'
+    template_folder = f'{base_folder}/{fs['outputFolder']}/{TEMPLATE_FOLDER}'
     image_name = open(f'{project_folder}/{fs['imageVersionFp']}').read()
 
     # Create kubernetes namespace
-    namespace_hook = {
-        'helm.sh/hook': helm['hook'], 'helm.sh/hook-weight': '-2', 'helm.sh/hook-delete-policy': helm['hookPolicy']
-    }
-    namespace = create_namespace(use_case_name, general_level=kube['namespacePolicy'], hook=namespace_hook)
+    namespace_hook = {'stages': 'pre-install', 'weight': '-2', 'policy': 'hook-failed'}
+    namespace = create_namespace(use_case_name, general_level='baseline', hook=namespace_hook)
     namespace_name = namespace['metadata']['name']
-    print(f'Adding {helm['templateFolder']}/{namespace_name}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{namespace_name}.yaml...')
     with open(f'{template_folder}/{namespace_name}.yaml', 'w') as namespace_file:
         namespace_file.write(dump(namespace))
 
     # Create admission policies
-    a_policy_hook = {
-        'helm.sh/hook': helm['hook'], 'helm.sh/hook-weight': '-1', 'helm.sh/hook-delete-policy': helm['hookPolicy']
-    }
+    a_policy_hook = {'stages': 'pre-install', 'weight': '-1', 'policy': 'hook-failed'}
     a_policy_constraints = {
         'resourceRules': [{
             'apiGroups': ['apps'],
@@ -208,16 +198,16 @@ def create_chart(base_folder, project_folder, setup_config):
         namespace_name, hook=a_policy_hook
     )
 
-    print(f'Adding {helm['templateFolder']}/{a_policy['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{a_policy['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{a_policy['metadata']['name']}.yaml', 'w') as a_policy_file:
         a_policy_file.write(dump(a_policy))
 
-    print(f'Adding {helm['templateFolder']}/{a_policy_binding['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{a_policy_binding['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{a_policy_binding['metadata']['name']}.yaml', 'w') as a_policy_binding_file:
         a_policy_binding_file.write(dump(a_policy_binding))
 
     # Create secrets
-    create_secret_templates(dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder)
+    create_secret_templates(dns, fs, stage, namespace_name, template_folder)
 
     # Create deployment
     pod_labels = {
@@ -225,7 +215,7 @@ def create_chart(base_folder, project_folder, setup_config):
     }
     create_deployment_template(
         use_case_name, namespace_name, kube['replicas'], pod_labels, kube['podRestartPolicy'], image_name, stage,
-        platform, dns, envs, fs, helm['templateFolder'], template_folder
+        platform, dns, envs, template_folder
     )
 
     # Create service
@@ -235,7 +225,7 @@ def create_chart(base_folder, project_folder, setup_config):
         'targetPort': platform['startPort'] + 1
     }]
     service = create_service(use_case_name, namespace_name, pod_labels, port_bindings)
-    print(f'Adding {helm['templateFolder']}/{service['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{service['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{service['metadata']['name']}.yaml', 'w') as service_file:
         service_file.write(dump(service))
 
@@ -256,7 +246,7 @@ def create_chart(base_folder, project_folder, setup_config):
         use_case_name, namespace_name, 'nginx', dns['domain'], f'{dns['ingressName']}-secret',
         ingress_paths
     )
-    print(f'Adding {helm['templateFolder']}/{ingress['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{ingress['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{ingress['metadata']['name']}.yaml', 'w') as ingress_file:
         ingress_file.write(dump(ingress))
 
@@ -269,6 +259,6 @@ def create_chart(base_folder, project_folder, setup_config):
         use_case_name, namespace_name, {'matchLabels': pod_labels}, f'{dns['defaultIP']}/32',
         port_bindings
     )
-    print(f'Adding {helm['templateFolder']}/{network_policy['metadata']['name']}.yaml...')
+    print(f'Adding {TEMPLATE_FOLDER}/{network_policy['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{network_policy['metadata']['name']}.yaml', 'w') as network_policy_file:
         network_policy_file.write(dump(network_policy))

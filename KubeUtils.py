@@ -36,10 +36,7 @@ def create_namespace(name, general_level='privileged', general_version='v1.34', 
 
     # Check for hooks
     if hook is not None:
-        namespace_config['metadata']['annotations'] = {}
-        namespace_config['metadata']['annotations']['helm.sh/hook'] = hook['stages']
-        namespace_config['metadata']['annotations']['helm.sh/hook-weight'] = hook['weight']
-        namespace_config['metadata']['annotations']['helm.sh/hook-delete-policy'] = hook['policy']
+        namespace_config['metadata']['annotations'] = {k:v for k, v in hook}
 
     # Return namespace
     return namespace_config
@@ -85,15 +82,8 @@ def create_validating_admission_policy(name, failure_policy, constraints, valida
 
     # Check for hooks
     if hook is not None:
-        policy_config['metadata']['annotations'] = {}
-        policy_config['metadata']['annotations']['helm.sh/hook'] = hook['stages']
-        policy_config['metadata']['annotations']['helm.sh/hook-weight'] = hook['weight']
-        policy_config['metadata']['annotations']['helm.sh/hook-delete-policy'] = hook['policy']
-
-        policy_binding_config['metadata']['annotations'] = {}
-        policy_binding_config['metadata']['annotations']['helm.sh/hook'] = hook['stages']
-        policy_binding_config['metadata']['annotations']['helm.sh/hook-weight'] = hook['weight']
-        policy_binding_config['metadata']['annotations']['helm.sh/hook-delete-policy'] = hook['policy']
+        policy_config['metadata']['annotations'] = {k:v for k, v in hook}
+        policy_binding_config['metadata']['annotations'] = {k:v for k, v in hook}
 
     # Return admission policy and admission policy binding
     return policy_config, policy_binding_config

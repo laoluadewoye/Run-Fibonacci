@@ -4,12 +4,12 @@ from subprocess import run
 from time import sleep
 from requests import request
 from GenerateTLS import create_tls_materials
-from GeneratePods import create_chart
+from GenerateDeployments import create_chart
 
 
 if __name__ == '__main__':
     # Constants
-    USE_CASE_NUM: int = 3
+    USE_CASE_NUM: int = 4
 
     # Get base folder
     BASE_FOLDER = Path(__file__).resolve().parent
@@ -71,6 +71,8 @@ if __name__ == '__main__':
         sleep(1)
 
     ingress_ip = loads(ingress_info.stdout)['status']['loadBalancer']['ingress'][0]['ip']
+    ingress_api = dns['startAPI']
+    ingress_headers = {"Host": dns['domain']}
 
     external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
     external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
@@ -78,8 +80,8 @@ if __name__ == '__main__':
 
     response = request(
         method='GET',
-        url=f'https://{ingress_ip}{dns['startAPI']}',
-        headers={"Host": dns['domain']},
+        url=f'https://{ingress_ip}{ingress_api}',
+        headers=ingress_headers,
         cert=(external_cert_fp, external_key_fp),
         verify=False
         # The above verify command is a current stop measure.

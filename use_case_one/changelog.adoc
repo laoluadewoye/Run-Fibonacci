@@ -1,12 +1,17 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.3
+a|* Updated scripts to use more configurations from `setup_config.json`
+* Updated final set of print lines in `Main.py`
+* Overhauled secret location settings to be more dynamic.
+
 |Version 1.0.2
-a|* Updated environmental variables to line up with run-fibonacci:1.1.0
+a|* Updated environmental variables to line up with `run-fibonacci:1.1.0`
 
 |Version 1.0.1
-a|* Use case ID is now governed by Python constant USE_CASE_NUM in GenerateCompose.py
-* Output JSON location is now governed by Python constant OUTPUT_JSON_NAME in GenerateCompose.py
+a|* Use case ID is now governed by Python constant `USE_CASE_NUM` in `GenerateCompose.py`
+* Output JSON location is now governed by Python constant `OUTPUT_JSON_NAME` in `GenerateCompose.py`
 
 |Version 1.0.0
 a|* Initial project
