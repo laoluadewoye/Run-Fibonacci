@@ -239,7 +239,7 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
 
     # Create ingress
     ingress_paths = [{
-        'path': f'/v{use_case_num}{dns['startAPI']}',
+        'path': dns['startAPI'],
         'pathType': 'Exact',
         'backend': {
             'service': {
@@ -251,7 +251,7 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
         }
     }]
     ingress = create_ingress(
-        use_case_name, namespace_name, 'nginx', dns['domain'],
+        use_case_name, namespace_name, 'nginx', f'v{use_case_num}.{dns['domain']}',
         f'{use_case_name}-{dns['ingressName']}-secret', ingress_paths
     )
     print(f'Adding {helm['templateFolder']}/{ingress['metadata']['name']}.yaml...')
