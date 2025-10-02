@@ -3,10 +3,6 @@ from os import mkdir
 from subprocess import run
 
 
-# Constants
-USE_CASE_NUM: int = 2
-
-
 def run_secret_command(secret_label, secret_name, secret_location, general_commands_fp):
     # Run the podman command
     secret_command = [
@@ -21,9 +17,9 @@ def run_secret_command(secret_label, secret_name, secret_location, general_comma
         compose_file.write(' '.join(secret_command).replace('--', '\n\t--'))
 
 
-def create_secrets(project_folder, stage, fs, dns, general_commands_fp):
+def create_secrets(project_folder, stage, fs, dns, general_commands_fp, use_case_num):
     # Create secret label
-    secret_label: str = f'{stage["useCasePrefix"]}={USE_CASE_NUM}'
+    secret_label: str = f'{stage["useCasePrefix"]}={use_case_num}'
 
     # Create CA secrets
     print(f'Defining secret {dns['caName']}-{fs['certExt']}...')
@@ -54,7 +50,7 @@ def create_secrets(project_folder, stage, fs, dns, general_commands_fp):
         )
 
 
-def create_containers(base_folder, project_folder, setup_config):
+def create_containers(base_folder, project_folder, setup_config, use_case_num):
     # Create subgroups to save space
     stage = setup_config['stage']
     fs = setup_config['fs']
@@ -69,7 +65,7 @@ def create_containers(base_folder, project_folder, setup_config):
     # Create the network
     print('Defining network...')
     network_command = [
-        'podman', 'network', 'create', '--label', f'{stage["useCasePrefix"]}={USE_CASE_NUM}',
+        'podman', 'network', 'create', '--label', f'{stage["useCasePrefix"]}={use_case_num}',
         '--driver', network['driver'], '--subnet', network['subnet'], '--ip-range', network['range'],
         '--gateway', network['gateway'], network['name']
     ]
@@ -77,12 +73,12 @@ def create_containers(base_folder, project_folder, setup_config):
 
     # Save command for container file
     print(f'Saving podman command for network {network['name']} to txt file...')
-    general_commands_fp = f'{base_folder}/{fs['outputFolder']}/{stage["useCasePrefix"]}-{USE_CASE_NUM}-commands.txt'
+    general_commands_fp = f'{base_folder}/{fs['outputFolder']}/{stage["useCasePrefix"]}-{use_case_num}-commands.txt'
     with open(general_commands_fp, 'w') as compose_file:
         compose_file.write(' '.join(network_command).replace('--', '\n\t--'))
 
     # Create the secrets
-    create_secrets(project_folder, stage, fs, dns, general_commands_fp)
+    create_secrets(project_folder, stage, fs, dns, general_commands_fp, use_case_num)
 
     # Create a list of host mappings
     print('Defining host mappings...')
@@ -113,7 +109,7 @@ def create_containers(base_folder, project_folder, setup_config):
 
         # Add a label
         container_command.extend([
-            '--label', f'{stage["useCasePrefix"]}={USE_CASE_NUM}'
+            '--label', f'{stage["useCasePrefix"]}={use_case_num}'
         ])
 
         # Add a binding port if the first container

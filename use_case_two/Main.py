@@ -7,6 +7,9 @@ from GeneratePodman import create_containers
 
 
 if __name__ == '__main__':
+    # Constants
+    USE_CASE_NUM: int = 2
+
     # Get base folder
     BASE_FOLDER = Path(__file__).resolve().parent
 
@@ -25,7 +28,7 @@ if __name__ == '__main__':
     create_tls_materials(project_folder, setup_config)
 
     # Create Podman secrets and containers
-    create_containers(BASE_FOLDER, project_folder, setup_config)
+    create_containers(BASE_FOLDER, project_folder, setup_config, USE_CASE_NUM)
 
     # Send a get request to the start API
     for i in range(setup_config['stage']['startDelay'], 0, -1):

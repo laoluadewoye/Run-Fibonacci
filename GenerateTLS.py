@@ -1,3 +1,4 @@
+from shutil import rmtree
 from os.path import exists
 from os import mkdir
 from cryptography.hazmat.primitives import serialization, hashes
@@ -76,8 +77,9 @@ def create_tls_materials(project_folder, setup_config):
     stage = setup_config['stage']
 
     # Create TLS folder
-    if not exists(f'{project_folder}/{tls_folder}'):
-        mkdir(f'{project_folder}/{tls_folder}')
+    if exists(f'{project_folder}/{tls_folder}'):
+        rmtree(f'{project_folder}/{tls_folder}')
+    mkdir(f'{project_folder}/{tls_folder}')
 
     # Generate CA TLS materials
     print('Creating CA TLS materials...')
@@ -170,9 +172,10 @@ def create_tls_materials(project_folder, setup_config):
 
         # Create current server_stage information
         server_stage_cert_name: str = f'{stage['namePrefix']}-{server_stage_index}.{dns['domain']}'
+        server_stage_service_name: str = f'{stage['namePrefix']}-{server_stage_index}-service'
         server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
         server_stage_alt_names = [
-            server_stage_cert_name, dns['domain'], dns['default']
+            server_stage_cert_name, server_stage_service_name, dns['domain'], dns['default']
         ]
         server_stage_subject = x509.Name([
             x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),

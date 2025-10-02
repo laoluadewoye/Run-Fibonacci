@@ -30,7 +30,7 @@ if __name__ == '__main__':
     create_tls_materials(project_folder, setup_config)
 
     # Create Kubernetes Helm chart
-    create_chart(BASE_FOLDER, project_folder, setup_config)
+    create_chart(BASE_FOLDER, project_folder, setup_config, USE_CASE_NUM)
 
     # Create a new Helm release
     core_name = f'{use_case_prefix}-{USE_CASE_NUM}'
@@ -53,8 +53,8 @@ if __name__ == '__main__':
     # Wait for the IP address of the ingress to appear
     print(f'Waiting for {core_name}-ingress to get an IP address...')
     command = (
-        "kubectl wait --for=jsonpath={.status.loadBalancer.ingress} " +
-        f"ingress/{core_name}-ingress -n {core_name}-namespace --timeout=60s"
+            "kubectl wait --for=jsonpath={.status.loadBalancer.ingress} " +
+            f"ingress/{core_name}-ingress -n {core_name}-namespace --timeout=60s"
     )
     run(command, shell=True)
 
@@ -71,8 +71,6 @@ if __name__ == '__main__':
         sleep(1)
 
     ingress_ip = loads(ingress_info.stdout)['status']['loadBalancer']['ingress'][0]['ip']
-    ingress_api = dns['startAPI']
-    ingress_headers = {"Host": dns['domain']}
 
     external_key_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
     external_cert_fp = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
@@ -80,8 +78,8 @@ if __name__ == '__main__':
 
     response = request(
         method='GET',
-        url=f'https://{ingress_ip}{ingress_api}',
-        headers=ingress_headers,
+        url=f'https://{ingress_ip}/v{USE_CASE_NUM}{dns['startAPI']}',
+        headers={"Host": dns['domain']},
         cert=(external_cert_fp, external_key_fp),
         verify=False
         # The above verify command is a current stop measure.

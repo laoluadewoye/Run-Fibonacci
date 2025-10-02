@@ -1,6 +1,11 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.3
+a|* Updated creation of ingress secret configuration to line up in naming scheme with ingress configuration.
+* Fixed variable naming error where the deployment filestream would be called a secret filestream.
+* Added a `v3` version specifier to the API to distinguish it from other use cases.
+
 |Version 1.0.2
 a|* Streamlined use of `USE_CASE_NUM`
 * Fixed bug where hooks dictionary would be treated as a single item rather than key value pairs when parsing.

@@ -29,14 +29,14 @@ def create_helm_tls_file_function(tls_folder, tls_filename, tls_ext):
     )
 
 
-def create_secret_templates(dns, fs, stage, envs, namespace_name, template_name, template_folder):
+def create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name, template_name, template_folder):
     # Create Ingress secrets
     ingress_secret_data = {
         'tls.key': create_helm_tls_file_function(fs['tlsFolder'], dns['ingressName'], fs['keyExt']),
         'tls.crt': create_helm_tls_file_function(fs['tlsFolder'], dns['ingressName'], fs['certExt'])
     }
     ingress_secret = create_secret(
-        dns['ingressName'], namespace_name, 'kubernetes.io/TLS', ingress_secret_data
+        f'{use_case_name}-{dns['ingressName']}', namespace_name, 'kubernetes.io/TLS', ingress_secret_data
     )
     print(f'Adding {template_name}/{ingress_secret['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{ingress_secret['metadata']['name']}.yaml', 'w') as ingress_secret_file:
@@ -138,8 +138,8 @@ def create_deployment_template(name, namespace_name, replica_count, pod_labels, 
 
     # Save deployment
     print(f'Adding {template_name}/{deployment['metadata']['name']}.yaml...')
-    with open(f'{template_folder}/{deployment['metadata']['name']}.yaml', 'w') as server_stage_secret_file:
-        server_stage_secret_file.write(dump(deployment))
+    with open(f'{template_folder}/{deployment['metadata']['name']}.yaml', 'w') as deployment_secret_file:
+        deployment_secret_file.write(dump(deployment))
 
 
 def create_chart(base_folder, project_folder, setup_config, use_case_num):
@@ -213,7 +213,7 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
         a_policy_binding_file.write(dump(a_policy_binding))
 
     # Create secrets
-    create_secret_templates(dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder)
+    create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder)
 
     # Create deployment
     pod_labels = {
@@ -237,7 +237,7 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
 
     # Create ingress
     ingress_paths = [{
-        'path': dns['startAPI'],
+        'path': f'/v{use_case_num}{dns['startAPI']}',
         'pathType': 'Exact',
         'backend': {
             'service': {
@@ -249,8 +249,8 @@ def create_chart(base_folder, project_folder, setup_config, use_case_num):
         }
     }]
     ingress = create_ingress(
-        use_case_name, namespace_name, 'nginx', dns['domain'], f'{dns['ingressName']}-secret',
-        ingress_paths
+        use_case_name, namespace_name, 'nginx', dns['domain'],
+        f'{use_case_name}-{dns['ingressName']}-secret', ingress_paths
     )
     print(f'Adding {helm['templateFolder']}/{ingress['metadata']['name']}.yaml...')
     with open(f'{template_folder}/{ingress['metadata']['name']}.yaml', 'w') as ingress_file:

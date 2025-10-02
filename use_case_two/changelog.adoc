@@ -1,6 +1,9 @@
 [cols="1,1"]
 |===
 
+|Version 1.0.3
+a|* Updated usage of `USE_CASE_NUM` throughout use case
+
 |Version 1.0.2
 a|* Updated scripts to use more configurations from `setup_config.json`
 * Overhauled secret location settings to be more dynamic.

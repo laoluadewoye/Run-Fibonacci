@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     response = request(
         method='GET',
-        url=f'https://{ingress_ip}{dns['startAPI']}',
+        url=f'https://{ingress_ip}/v{USE_CASE_NUM}{dns['startAPI']}',
         headers={"Host": dns['domain']},
         cert=(external_cert_fp, external_key_fp),
         verify=False

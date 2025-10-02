@@ -1,0 +1,48 @@
+= Fibonacci Message Passing within Kubernetes Pods
+:author: Laolu Adewoye
+:email: laoluadewoye@gmail.com>
+:description: Explains how the second Kubernetes use case works.
+:keywords:
+
+== Versioning
+
+Use Case One Version:
+include::latest_program.adoc[]
+
+=== Changelog
+
+include::changelog.adoc[]
+
+== Explanation of Use Case
+
+This use case seeks to show how the Project's architecture can be achieved using Kubernetes deployments across the entire cluster. Kubernetes was meant for large-scale distributed container orchestration, and this use case is going to fully buy into that notion by supporting the core message passing architecture using the automated networking of the Kube controllers.
+
+image:../extra_materials/use_case_four_pod.png["Diagram of a server stage as a deployment of replica pods. There are two main boxes in this diagram. The first box is the green server stage pod template box on the right. This box contains three more boxes that represent the server stage container (colored in light green), the network interface (colored in dark green), and the pod secrets (colored in black). The server stage container box containes four more boxes taht represent the enviornmental variables (colored in blue), the fibonacci server image (colored in blue), the port binding (colored in dark green), and the secret mount (colored in black). The network interface box is connected to the port binding box using a dark green arrowed line. The pod secrets box is connected to the secret mount box using a back arrowed line. After the green server stage pod template box, the second main box in the diagram is the yellow server stage development box. This box conatains four smaller green boxes that represent replicas of the server stage pod created by the template described by the first main box. Each simplfied pod replica box has two unlabled tiny boxes attatched, where the first one is green to represent the network interface, and the second one is black to represent the pod secrets. The second simplified pod replica box has two dashed lines growing out from it to show the connection between the pod replica and the pod template boxes."]
+
+Assembling the message passing application starts at the deployment level. The above diagram shows how the server stage is built from the container level to the deployment level.
+
+I settled on making deployment-level server stages because it encourages a system where server stages can be spread out across nodes, clusters, and even cloud platforms, but no matter how complex the system became it could still fundamentally operate like the architecture in the project README.
+
+In addition, deployments can automatically scale and replace servers at a pod level, so if one server fails a health check, a new one can be created to take over its duties and the pod with the failed server can be shut down without disrupting the availability of the service. Lastly, I can specify how many pod replicas I want for a service to account. If I am just running this on my personal minikube cluster, I can use only run deployments with one replica pod to make it easier to examine gunicorn logs.  If I wanted to put this on AWS EKS, I can set the replica count to be much higher to account for greater publicity of the application.
+
+As such, each server stage deployment will have a set of corresponding server stage pods. Each server stage pod replica will be made up of the same TLS secrets, the same fibonacci server image, the same environmental variables, and the same port settings. What will change, however, is the IP address that Kubernetes assigns to each pod to make it uniquely addressable. I can't assume Kubernetes will give me the same addresses every time I add an deployment and to do so would be antithetical to Kubernetes purpose, so the environmental-based server configurations will need to take that into account when deciding how to call other server stages and how to use other APIs.
+
+image:../extra_materials/use_case_four_ns.png["Diagram of how all server stages are networked and controlled in a Kubernetes namespace. There is one main blue box that represents the kubernetes namespace and security policy, and one person icon that sits outside of that blue obx. Inside the blue box there are two beige brown policy boxes and one black secrets box. The first brown policy box is labeled the network policy, and contains five smaller yellow boxes where the first one is the Kubernetes ingress box and the rest of the four are service boxes. The person icon sitting outside of everything is connected to the ingress box with a green arrowed line. The ingress box is connected ONLY to the first service box with a green arrowed line. The four services are all connected together with a set of green arrowed lines. All these green arrowed lines represent network connections. The second brown policy box is labeled the admission policy and containes four smaller yellow boxes that represent different server stage deployments. There are as many deployment boxes as service boxes, indicating that each deployment gets it's own service for networking. Deployment boxes are connected to service boxes with green arrows and tiny green boxes placed onto it that represent the network interfaces of the pods in the deployment. Deployment boxes have an addition tiny black box that represents the secret pools of all the pods in the deployment. A deployment box's black box is connected to the last box in the namespace box, a black kuberentes secrets box that represents the collection of all secrets in the namespace."]
+
+Once server stage deployments are created, they can be network using a system of services to connect them together. The Kubernetes architecture for the message passing app contains everything into a single namespace for ease of management. The namespace is further divided into a network section and admission section. The network section consists of the Kubernetes ingress and services for the app, surrounded by a network policy that ensures only allowed endpoints can communicate with the pods in the architecture. The admission section consists of the Kubernetes deployments. There is one deployment for every server stage, with connections to namespace-local secrets and the services.
+
+Only the first service is connected to the ingress so that only the starting server stage can be accessed by the outside. All items in the namespace are governed by a security policy that ensures that Kubernetes objects are configured in a way that doesn't expose the architecture to cyberattacks.
+
+== Files Within Use Case Directory
+
+Outside the AsciiDocs, there are a few important files within this use case directory.
+
+`Main.py` is the entrypoint to the program. Creates the TLS materials and then creates the use case application using Helm-compatible syntax and chart structure.
+
+`GenerateDeployments.py` is the specific Python file dedicated to creating the YAML configurations for Kubernetes objects. It calls `KubeUtils.py` and provides the settings to generate the files for installation into the Kubernetes cluster.
+
+The output of these programs is a Helm chart located in the output folder. As Kubernetes is one step up from Docker in orchestrating container services, Helm is one step up from Kubernetes in managing Kubernetes objects. Helm defines Kubernetes configurations as templates, as the keys and values that are placed in the YAML files can be replaced with inline functions that allow further dynamic customization of a Kubernetes application. I utilized this feature to create secret configurations where I didn't have to hardcode the data into the file, as Helm will do it at installation time.
+
+Helm also keeps track of every Kubernetes object created from the chart, reducing the installation and uninstallation of the use case from a few commands to one. `Main.py` uses this to install everything at once.
+
+To run this program, just run `Main.py` and you're good to go! When you're done, just use Helm to uninstall the chart. However, to ensure that certain things are defined before certain other things, I defined some objects as Helm hooks to control the order of installation. `Main.py` will output what commands you need to write to uninstall everything fully at the end.
