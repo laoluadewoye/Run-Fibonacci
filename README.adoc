@@ -99,43 +99,82 @@ There are two files that will be used across the entire project. The first is `s
 .. **Schema** -> JSON Object that contains the following keys:
 ... _countryInitials_
 .... **Definition** -> `dns` member key that specifies the country initials to use when creating certificates.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a valid `ISO 3166-1 alpha-2` initial.
 ... _domain_
 .... **Definition** -> `dns` member key that specifies the root domain name for all entities.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must use a Kubernetes-compatible schema.
 ... _default_
 .... **Definition** -> `dns` member key that specifies the default domain name for all entities.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must use a Kubernetes-compatible schema.
 ... _defaultIP_
 .... **Definition** -> `dns` member key that specifies the default domain IP address for all entities.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a valid IPv4 address.
 ... _defaultListeningIP_
 .... **Definition** -> `dns` member key that specifies the default listening IP address for all entities.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a valid IPv4 address.
 ... _caName_
 .... **Definition** -> `dns` member key that specifies what CA items should be prefixed with.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must use a Kubernetes-compatible schema.
 ... _externalName_
 .... **Definition** -> `dns` member key that specifies what external items should be prefixed with.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must use a Kubernetes-compatible schema.
 ... _ingressName_
 .... **Definition** -> `dns` member key that specifies what ingress items should be prefixed with.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must use a Kubernetes-compatible schema.
 ... _startAPI_
 .... **Definition** -> `dns` member key that specifies the location of the starting API.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must start with a slash and use a Kubernetes-compatible URL path.
+. _engine_
+.. **Definition** -> Top-level key that specifies information related to the settings to use for created container objects.
+.. **Schema** -> JSON Object that contains the following keys:
+... _network_
+.... **Definition** -> `engine` member key that specifies information related to the network settings to use for containers and pods.
+.... **Schema** -> JSON Object that contains the following keys:
+..... _name_
+...... **Definition** -> `network` member key that specifies the name of the network or network namespace to create.
+...... **Schema** -> JSON string. Must be a name using letters and hyphens.
+..... _driver_
+...... **Definition** -> `network` member key that specifies the network type to assign to the network or network namespace.
+...... **Schema** -> JSON string. Must be a valid Docker/Podman driver type.
+..... _subnet_
+...... **Definition** -> `network` member key that specifies the IPv4 (with subnet mask) network subnet to assign to the network or network namespace.
+...... **Schema** -> JSON string. Must be a valid IPv4 network address and subnet mask.
+..... _range_
+...... **Definition** -> `network` member key that specifies the IPv4 network range to assign to the network or network namespace.
+...... **Schema** -> JSON string. Must be a valid IPv4 network address and subnet mask.
+..... _gateway_
+...... **Definition** -> `network` member key that specifies the IPv4 network gateway to assign to the network or network namespace.
+...... **Schema** -> JSON string. Must be a valid IPv4 address.
+..... _prefix_
+...... **Definition** -> `network` member key that specifies the IPv4 network prefix to assign to containers and pods in the network or network namespace.
+...... **Schema** -> JSON string. Must be a valid IPv4 network prefix.
+..... _startAddress_
+...... **Definition** -> `network` member key that specifies the IPv4 starting host address number to assign to containers and pods in the network or network namespace.
+...... **Schema** -> JSON integer. Must be a valid integer that, when combined with `prefix`, does results in an unused IPv4 address.
+... _startPort_
+.... **Definition** -> `engine` member key that specifies the starting non-privileged port number to assign to containers and pods in the network or network namespace.
+.... **Schema** -> JSON integer. Must be a valid port number that is not an IANA well known port.
+... _healthcheckCMD_
+.... **Definition** -> `engine` member key that specifies the command to run for a healthcheck.
+.... **Schema** -> JSON string. Must be a valid UNIX command string.
+... _containerRestartPolicy_
+.... **Definition** -> `engine` member key that specifies the restart policy for containers.
+.... **Schema** -> JSON string. Must be a valid Docker/Podman restart policy.
+... _containerFailPolicy_
+.... **Definition** -> `engine` member key that specifies the health check failure policy for containers.
+.... **Schema** -> JSON string. Must be a valid Docker/Podman healthcheck fail policy.
 . _envs_
 .. **Definition** -> Top-level key that specifies information related to environmental variables that isn't covered by other JSON keys.
 .. **Schema** -> JSON Object that contains the following keys:
 ... _selfName_
 .... **Definition** -> `envs` member key that specifies what to call server TLS materials.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string.
 ... _tlsTarget_
 .... **Definition** -> `envs` member key that specifies the expected absolute filepath for a server's TLS directory.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a valid UNIX absolute filepath.
 ... _throttleInterval_
 .... **Definition** -> `envs` member key that specifies the interval in seconds that a server should wait between receiving numbers and sending numbers.
-.... **Schema** -> JSON integer
+.... **Schema** -> JSON integer.
 ... _upperBound_
 .... **Definition** -> `envs` member key that specifies the number that, upon reaching, the server should stop sending new numbers.
 .... **Schema** -> JSON integer
@@ -144,10 +183,10 @@ There are two files that will be used across the entire project. The first is `s
 .. **Schema** -> JSON Object that contains the following keys:
 ... _tlsFolder_
 .... **Definition** -> `fs` member key that specifies the folder in the project directory that stores TLS materials.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a folder name with no pathing.
 ... _outputFolder_
 .... **Definition** -> `fs` member key that specifies the folder in a use case directory that stores generated content.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a folder name with no pathing.
 ... _certExt_
 .... **Definition** -> `fs` member key that specifies the file extension to use for exported PEM certificates.
 .... **Schema** -> JSON string
@@ -168,91 +207,61 @@ There are two files that will be used across the entire project. The first is `s
 .... **Schema** -> JSON Object that contains the following keys:
 ..... _allowedKubeVersion_
 ...... **Definition** -> `helm` member key that specifies the allowed kubernetes version for the helm chart.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must use valid Helm chart syntax.
 ..... _apiVersion_
 ...... **Definition** -> `helm` member key that specifies the Helm API version to use.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must be a valid Helm API version.
 ..... _chartType_
 ...... **Definition** -> `helm` member key that specifies the Helm Chart Type.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must be a valid Helm chart type.
 ..... _home_
 ...... **Definition** -> `helm` member key that specifies the home URL for the chart being deployed.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must be a valid HTTPS web address.
 ..... _hook_
 ...... **Definition** -> `helm` member key that specifies the type of hook to use for helm chart templates.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must be set to 'pre-install' to help control template installation order.
 ..... _hookPolicy_
 ...... **Definition** -> `helm` member key that specifies the policy to use when deciding to delete hooks.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must be set to 'hook-failed' to prevent deletion of early template installations.
 ..... _templateFolder_
 ...... **Definition** -> `helm` member key that specifies the location of templates in a chart directory.
-...... **Schema** -> JSON string
+...... **Schema** -> JSON string. Must be a valid folder name with no pathing.
 ... _namespacePolicy_
 .... **Definition** -> `orchestrator` member key that specifies the security policy for namespaces.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a valid orchestrator security policy level.
 ... _podRestartPolicy_
 .... **Definition** -> `orchestrator` member key that specifies the restart policy for pods.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a valid orchestrator pod restart policy.
 ... _replicas_
 .... **Definition** -> `orchestrator` member key that specifies the number of replica pods to make for a given server stage.
-.... **Schema** -> JSON integer
-. _engine_
-.. **Definition** -> Top-level key that specifies information related to the settings to use for created container objects.
+.... **Schema** -> JSON integer.
+. _server_
+.. **Definition** -> Top-level key that specifies information related to the components the server implements for its functionality.
 .. **Schema** -> JSON Object that contains the following keys:
-... _network_
-.... **Definition** -> `engine` member key that specifies information related to the network settings to use for containers and pods.
-.... **Schema** -> JSON Object that contains the following keys:
-..... _name_
-...... **Definition** -> `network` member key that specifies the name of the network or network namespace to create.
-...... **Schema** -> JSON string
-..... _driver_
-...... **Definition** -> `network` member key that specifies the network type to assign to the network or network namespace.
-...... **Schema** -> JSON string
-..... _subnet_
-...... **Definition** -> `network` member key that specifies the IPv4 (with subnet mask) network subnet to assign to the network or network namespace.
-...... **Schema** -> JSON string
-..... _range_
-...... **Definition** -> `network` member key that specifies the IPv4 network range to assign to the network or network namespace.
-...... **Schema** -> JSON string
-..... _gateway_
-...... **Definition** -> `network` member key that specifies the IPv4 network gateway to assign to the network or network namespace.
-...... **Schema** -> JSON string
-..... _prefix_
-...... **Definition** -> `network` member key that specifies the IPv4 network prefix to assign to containers and pods in the network or network namespace.
-...... **Schema** -> JSON string
-..... _startAddress_
-...... **Definition** -> `network` member key that specifies the IPv4 starting host address number to assign to containers and pods in the network or network namespace.
-...... **Schema** -> JSON integer
-... _startPort_
-.... **Definition** -> `engine` member key that specifies the starting non-privileged port number to assign to containers and pods in the network or network namespace.
-.... **Schema** -> JSON integer
-... _healthcheckCMD_
-.... **Definition** -> `engine` member key that specifies the command to run for a healthcheck.
-.... **Schema** -> JSON string
-... _containerRestartPolicy_
-.... **Definition** -> `engine` member key that specifies the restart policy for containers.
-.... **Schema** -> JSON string
-... _containerFailPolicy_
-.... **Definition** -> `engine` member key that specifies the health check failure policy for containers.
-.... **Schema** -> JSON string
+... _api_
+.... **Definition** -> `server` member key that specifies the web api that should be used.
+.... **Schema** -> JSON string. Must be one of the following -> [rest]
+... _datastore_
+.... **Definition** -> `server` member key that specifies how data is stored.
+.... **Schema** -> JSON string. Must be one of the following -> [none, file]
 . _stage_
 .. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.
 .. **Schema** -> JSON Object that contains the following keys:
 ... _composeNameSuffix_
 .... **Definition** -> `stage` member key that specifies the suffix for Docker Compose service names.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a string of letters and dashes.
 ... _count_
 .... **Definition** -> `stage` member key that specifies the amount of server stages to create.
-.... **Schema** -> JSON integer
+.... **Schema** -> JSON integer.
 ... _namePrefix_
 .... **Definition** -> `stage` member key that specifies the name prefix for servers, containers, and pods.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a string of letters and dashes.
 ... _startDelay_
 .... **Definition** -> `stage` member key that specifies how long in seconds should a program wait before calling a server's start API.
 .... **Schema** -> JSON integer
 ... _useCasePrefix_
 .... **Definition** -> `stage` member key that specifies the prefix to assign to a specific use case.
-.... **Schema** -> JSON string
+.... **Schema** -> JSON string. Must be a string of letters and dashes.
 . _tls_
 .. **Definition** -> Top-level key that specifies information related to attributes about TLS keys and certificates.
 .. **Schema** -> JSON Object that contains the following keys:

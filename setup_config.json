@@ -10,6 +10,21 @@
         "ingressName": "ingress",
         "startAPI": "/start"
     },
+    "engine": {
+        "network": {
+            "name": "run-fib-network",
+            "driver": "bridge",
+            "subnet": "172.19.0.0/16",
+            "range": "172.19.0.0/24",
+            "gateway": "172.19.0.1",
+            "prefix": "172.19.0",
+            "startAddress": 10
+        },
+        "startPort": 8080,
+        "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
+        "containerRestartPolicy": "on-failure",
+        "containerFailPolicy": "kill"
+    },
     "envs": {
         "selfName": "self",
         "tlsTarget": "/secrets",
@@ -38,20 +53,9 @@
         "podRestartPolicy": "Always",
         "replicas": 3
     },
-    "engine": {
-        "network": {
-            "name": "run-fib-network",
-            "driver": "bridge",
-            "subnet": "172.19.0.0/16",
-            "range": "172.19.0.0/24",
-            "gateway": "172.19.0.1",
-            "prefix": "172.19.0",
-            "startAddress": 10
-        },
-        "startPort": 8080,
-        "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
-        "containerRestartPolicy": "on-failure",
-        "containerFailPolicy": "kill"
+    "server": {
+        "api": "rest",
+        "datastore": "none"
     },
     "stage": {
         "composeNameSuffix": "app",
