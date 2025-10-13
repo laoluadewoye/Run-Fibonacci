@@ -24,7 +24,7 @@
         "imageVersionFp": "fibonacci_image/latest_image.adoc",
         "composeOutput": "docker-compose.json"
     },
-    "kube": {
+    "orchestrator": {
         "helm": {
             "allowedKubeVersion": ">= 1.30.0",
             "apiVersion": "v2",
@@ -38,7 +38,7 @@
         "podRestartPolicy": "Always",
         "replicas": 3
     },
-    "platform": {
+    "engine": {
         "network": {
             "name": "run-fib-network",
             "driver": "bridge",

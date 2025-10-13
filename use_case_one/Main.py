@@ -43,7 +43,7 @@ if __name__ == '__main__':
         print(f'Waiting {i} seconds to start sequence...')
         sleep(1)
 
-    starting_port: int = setup_config['platform']['startPort']
+    starting_port: int = setup_config['engine']['startPort']
     external_key_fp: str = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['keyExt']}'
     external_cert_fp: str = f'{project_folder}/{fs['tlsFolder']}/{dns['externalName']}.{fs['certExt']}'
     external_ca_cert_fp: str = f'{project_folder}/{fs['tlsFolder']}/{dns['caName']}.{fs['certExt']}'

@@ -6,6 +6,14 @@
 
 == Versioning
 
+=== Project Version
+include::latest_program.adoc[]
+
+=== Project Changelog
+include::changelog.adoc[]
+
+=== Project Components
+
 Latest Image Version:
 include::fibonacci_image/latest_image.adoc[]
 
@@ -152,11 +160,11 @@ There are two files that will be used across the entire project. The first is `s
 ... _composeOutput_
 .... **Definition** -> `fs` member key that specifies the file that holds the output for use case one.
 .... **Schema** -> JSON string
-. _kube_
-.. **Definition** -> Top-level key that specifies information related to the settings to use for created kubernetes objects.
+. _orchestrator_
+.. **Definition** -> Top-level key that specifies information related to the settings to use for created orchestrator objects.
 .. **Schema** -> JSON Object that contains the following keys:
 ... _helm_
-.... **Definition** -> `kube` member key that specifies information related to the settings for helm to use during chart application.
+.... **Definition** -> `orchestrator` member key that specifies information related to the settings for helm to use during chart application.
 .... **Schema** -> JSON Object that contains the following keys:
 ..... _allowedKubeVersion_
 ...... **Definition** -> `helm` member key that specifies the allowed kubernetes version for the helm chart.
@@ -180,19 +188,19 @@ There are two files that will be used across the entire project. The first is `s
 ...... **Definition** -> `helm` member key that specifies the location of templates in a chart directory.
 ...... **Schema** -> JSON string
 ... _namespacePolicy_
-.... **Definition** -> `kube` member key that specifies the security policy for namespaces.
+.... **Definition** -> `orchestrator` member key that specifies the security policy for namespaces.
 .... **Schema** -> JSON string
 ... _podRestartPolicy_
-.... **Definition** -> `kube` member key that specifies the restart policy for pods.
+.... **Definition** -> `orchestrator` member key that specifies the restart policy for pods.
 .... **Schema** -> JSON string
 ... _replicas_
-.... **Definition** -> `kube` member key that specifies the number of replica pods to make for a given server stage.
+.... **Definition** -> `orchestrator` member key that specifies the number of replica pods to make for a given server stage.
 .... **Schema** -> JSON integer
-. _platform_
+. _engine_
 .. **Definition** -> Top-level key that specifies information related to the settings to use for created container objects.
 .. **Schema** -> JSON Object that contains the following keys:
 ... _network_
-.... **Definition** -> `platform` member key that specifies information related to the network settings to use for containers and pods.
+.... **Definition** -> `engine` member key that specifies information related to the network settings to use for containers and pods.
 .... **Schema** -> JSON Object that contains the following keys:
 ..... _name_
 ...... **Definition** -> `network` member key that specifies the name of the network or network namespace to create.
@@ -216,16 +224,16 @@ There are two files that will be used across the entire project. The first is `s
 ...... **Definition** -> `network` member key that specifies the IPv4 starting host address number to assign to containers and pods in the network or network namespace.
 ...... **Schema** -> JSON integer
 ... _startPort_
-.... **Definition** -> `platform` member key that specifies the starting non-privileged port number to assign to containers and pods in the network or network namespace.
+.... **Definition** -> `engine` member key that specifies the starting non-privileged port number to assign to containers and pods in the network or network namespace.
 .... **Schema** -> JSON integer
 ... _healthcheckCMD_
-.... **Definition** -> `platform` member key that specifies the command to run for a healthcheck.
+.... **Definition** -> `engine` member key that specifies the command to run for a healthcheck.
 .... **Schema** -> JSON string
 ... _containerRestartPolicy_
-.... **Definition** -> `platform` member key that specifies the restart policy for containers.
+.... **Definition** -> `engine` member key that specifies the restart policy for containers.
 .... **Schema** -> JSON string
 ... _containerFailPolicy_
-.... **Definition** -> `platform` member key that specifies the health check failure policy for containers.
+.... **Definition** -> `engine` member key that specifies the health check failure policy for containers.
 .... **Schema** -> JSON string
 . _stage_
 .. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.

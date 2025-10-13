@@ -66,7 +66,7 @@ def create_secret_templates(use_case_name: str, dns: dict, fs: dict, stage: dict
 
 
 def create_deployment_template(name: str, namespace_name: str, replica_count: int, pod_labels: dict,
-                               restart_policy: str, image_name: str, stage: dict, platform: dict, dns: dict,
+                               restart_policy: str, image_name: str, stage: dict, engine: dict, dns: dict,
                                envs: dict, fs: dict, template_name: str, template_folder: str,
                                deploy_node_selector: dict = None, deploy_labels: dict = None) -> None:
     # Start configuration
@@ -78,7 +78,7 @@ def create_deployment_template(name: str, namespace_name: str, replica_count: in
     # Create liveness probe for all containers
     probe_settings: dict = {
         'exec': {
-            'command': [platform['healthcheckCMD']]
+            'command': [engine['healthcheckCMD']]
         },
         'initialDelaySeconds': 10,
         'periodSeconds': 10,
@@ -93,15 +93,15 @@ def create_deployment_template(name: str, namespace_name: str, replica_count: in
 
         # Create port bindings
         port_bindings: list[dict] = [{
-            'containerPort': platform['startPort'] + server_stage_index,
+            'containerPort': engine['startPort'] + server_stage_index,
             'protocol': 'TCP'
         }]
 
         # Create the destination port
         if server_stage_index < stage['count']:
-            dest_port: int = platform['startPort'] + server_stage_index + 1
+            dest_port: int = engine['startPort'] + server_stage_index + 1
         elif server_stage_index == stage['count']:
-            dest_port: int = platform['startPort'] + 1
+            dest_port: int = engine['startPort'] + 1
         else:
             raise IndexError(f'{server_stage_index} is invalid.')
 
@@ -111,7 +111,7 @@ def create_deployment_template(name: str, namespace_name: str, replica_count: in
             {'name': 'SERVER_STAGE_INDEX', 'value': f'{server_stage_index}'},
             {'name': 'SELF_LISTENING_ADDRESS', 'value': dns['defaultListeningIP']},
             {'name': 'SELF_HEALTHCHECK_ADDRESS', 'value': dns['default']},
-            {'name': 'SELF_PORT', 'value': f'{platform['startPort'] + server_stage_index}'},
+            {'name': 'SELF_PORT', 'value': f'{engine['startPort'] + server_stage_index}'},
             {'name': 'SECRET_KEY_TARGET', 'value': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}'},
             {'name': 'SECRET_CERT_TARGET', 'value': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}'},
             {'name': 'SECRET_CA_CERT_TARGET', 'value': f'{envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}'},
@@ -146,10 +146,10 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
     # Create subgroups to save space
     stage: dict = setup_config['stage']
     fs: dict = setup_config['fs']
-    helm: dict = setup_config['kube']['helm']
+    helm: dict = setup_config['orchestrator']['helm']
     dns: dict = setup_config['dns']
-    kube: dict = setup_config['kube']
-    platform: dict = setup_config['platform']
+    orchestrator: dict = setup_config['orchestrator']
+    engine: dict = setup_config['engine']
     envs: dict = setup_config['envs']
 
     # Create folders for chart items
@@ -176,7 +176,9 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
     namespace_hook: dict = {
         'helm.sh/hook': helm['hook'], 'helm.sh/hook-weight': '-2', 'helm.sh/hook-delete-policy': helm['hookPolicy']
     }
-    namespace: dict = create_namespace(use_case_name, general_level=kube['namespacePolicy'], hook=namespace_hook)
+    namespace: dict = create_namespace(
+        use_case_name, general_level=orchestrator['namespacePolicy'], hook=namespace_hook
+    )
     namespace_name: str = namespace['metadata']['name']
     print(f'Adding {helm['templateFolder']}/{namespace_name}.yaml...')
     with open(f'{template_folder}/{namespace_name}.yaml', 'w') as namespace_file:
@@ -213,22 +215,24 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
         a_policy_binding_file.write(dump(a_policy_binding))
 
     # Create secrets
-    create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder)
+    create_secret_templates(
+        use_case_name, dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder
+    )
 
     # Create deployment
     pod_labels: dict = {
         'app.kubernetes.io/name': f'{use_case_name}-app'
     }
     create_deployment_template(
-        use_case_name, namespace_name, kube['replicas'], pod_labels, kube['podRestartPolicy'], image_name, stage,
-        platform, dns, envs, fs, helm['templateFolder'], template_folder
+        use_case_name, namespace_name, orchestrator['replicas'], pod_labels, orchestrator['podRestartPolicy'],
+        image_name, stage, engine, dns, envs, fs, helm['templateFolder'], template_folder
     )
 
     # Create service
     port_bindings: list[dict] = [{
-        'port': platform['startPort'] + 1,
+        'port': engine['startPort'] + 1,
         'protocol': 'TCP',
-        'targetPort': platform['startPort'] + 1
+        'targetPort': engine['startPort'] + 1
     }]
     service: dict = create_service(use_case_name, namespace_name, pod_labels, port_bindings)
     print(f'Adding {helm['templateFolder']}/{service['metadata']['name']}.yaml...')
@@ -243,7 +247,7 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
             'service': {
                 'name': f'{use_case_name}-service',
                 'port': {
-                    'number': platform['startPort'] + 1
+                    'number': engine['startPort'] + 1
                 }
             }
         }
@@ -258,7 +262,7 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
 
     # Create network policy
     port_bindings: list[dict] = [{
-        'port': platform['startPort'] + 1,
+        'port': engine['startPort'] + 1,
         'protocol': 'TCP'
     }]
     network_policy: dict = create_network_policy(

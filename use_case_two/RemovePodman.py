@@ -35,5 +35,5 @@ if __name__ == '__main__':
     # Remove network
     print('Removing network...')
     run([
-        'podman', 'network', 'rm', f'{setup_config['platform']['network']['name']}',
+        'podman', 'network', 'rm', f'{setup_config['engine']['network']['name']}',
     ])

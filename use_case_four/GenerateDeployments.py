@@ -67,7 +67,7 @@ def create_secret_templates(use_case_name: str, dns: dict, fs: dict, stage: dict
 
 def create_deployment_template(server_stage_index: int, name: str, namespace_name: str, replica_count: int,
                                pod_labels: dict, restart_policy: str, probe_settings: dict, image_name: str,
-                               template_name: str, template_folder: str, platform: dict, stage: dict, dns: dict,
+                               template_name: str, template_folder: str, engine: dict, stage: dict, dns: dict,
                                envs: dict, fs: dict, deploy_node_selector: dict = None,
                                deploy_labels: dict = None) -> None:
     # Start deployment
@@ -78,7 +78,7 @@ def create_deployment_template(server_stage_index: int, name: str, namespace_nam
 
     # Create port bindings
     port_bindings: list[dict] = [{
-        'containerPort': platform['startPort'],
+        'containerPort': engine['startPort'],
         'protocol': 'TCP'
     }]
 
@@ -96,12 +96,12 @@ def create_deployment_template(server_stage_index: int, name: str, namespace_nam
         {'name': 'SERVER_STAGE_INDEX', 'value': f'{server_stage_index}'},
         {'name': 'SELF_LISTENING_ADDRESS', 'value': dns['defaultListeningIP']},
         {'name': 'SELF_HEALTHCHECK_ADDRESS', 'value': dns['default']},
-        {'name': 'SELF_PORT', 'value': f'{platform['startPort']}'},
+        {'name': 'SELF_PORT', 'value': f'{engine['startPort']}'},
         {'name': 'SECRET_KEY_TARGET', 'value': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}'},
         {'name': 'SECRET_CERT_TARGET', 'value': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}'},
         {'name': 'SECRET_CA_CERT_TARGET', 'value': f'{envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}'},
         {'name': 'DEST_ADDRESS', 'value': dest_service},
-        {'name': 'DEST_PORT', 'value': f'{platform['startPort']}'},
+        {'name': 'DEST_PORT', 'value': f'{engine['startPort']}'},
         {'name': 'THROTTLE_INTERVAL', 'value': f'{envs['throttleInterval']}'},
         {'name': 'UPPER_BOUND', 'value': f'{envs['upperBound']}'}
     ]
@@ -131,10 +131,10 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
     # Create subgroups to save space
     stage: dict = setup_config['stage']
     fs: dict = setup_config['fs']
-    helm: dict = setup_config['kube']['helm']
+    helm: dict = setup_config['orchestrator']['helm']
     dns: dict = setup_config['dns']
-    kube: dict = setup_config['kube']
-    platform: dict = setup_config['platform']
+    orchestrator: dict = setup_config['orchestrator']
+    engine: dict = setup_config['engine']
     envs: dict = setup_config['envs']
 
     # Create folders for chart items
@@ -161,7 +161,9 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
     namespace_hook: dict = {
         'helm.sh/hook': helm['hook'], 'helm.sh/hook-weight': '-2', 'helm.sh/hook-delete-policy': helm['hookPolicy']
     }
-    namespace: dict = create_namespace(use_case_name, general_level=kube['namespacePolicy'], hook=namespace_hook)
+    namespace: dict = create_namespace(
+        use_case_name, general_level=orchestrator['namespacePolicy'], hook=namespace_hook
+    )
     namespace_name: str = namespace['metadata']['name']
     print(f'Adding {helm['templateFolder']}/{namespace_name}.yaml...')
     with open(f'{template_folder}/{namespace_name}.yaml', 'w') as namespace_file:
@@ -198,7 +200,9 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
         a_policy_binding_file.write(dump(a_policy_binding))
 
     # Create secrets
-    create_secret_templates(use_case_name, dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder)
+    create_secret_templates(
+        use_case_name, dns, fs, stage, envs, namespace_name, helm['templateFolder'], template_folder
+    )
 
     # Loop through server stages
     pod_labels: dict = {
@@ -206,7 +210,7 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
     }
     probe_settings: dict = {
         'exec': {
-            'command': [platform['healthcheckCMD']]
+            'command': [engine['healthcheckCMD']]
         },
         'initialDelaySeconds': 10,
         'periodSeconds': 10,
@@ -221,16 +225,16 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
 
         # Create deployment
         create_deployment_template(
-            server_stage_index, server_stage_name, namespace_name, kube['replicas'], pod_labels,
-            kube['podRestartPolicy'], probe_settings, image_name, helm['templateFolder'], template_folder,
-            platform, stage, dns, envs, fs
+            server_stage_index, server_stage_name, namespace_name, orchestrator['replicas'], pod_labels,
+            orchestrator['podRestartPolicy'], probe_settings, image_name, helm['templateFolder'], template_folder,
+            engine, stage, dns, envs, fs
         )
 
         # Create service
         port_bindings: list[dict] = [{
-            'port': platform['startPort'],
+            'port': engine['startPort'],
             'protocol': 'TCP',
-            'targetPort': platform['startPort']
+            'targetPort': engine['startPort']
         }]
         service: dict = create_service(server_stage_name, namespace_name, pod_labels, port_bindings)
         print(f'Adding {helm['templateFolder']}/{service['metadata']['name']}.yaml...')
@@ -245,7 +249,7 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
             'service': {
                 'name': f'{stage['namePrefix']}-1-service',
                 'port': {
-                    'number': platform['startPort']
+                    'number': engine['startPort']
                 }
             }
         }
@@ -260,7 +264,7 @@ def create_chart(base_folder: Path, project_folder: Path, setup_config: dict, us
 
     # Create network policy
     port_bindings: list[dict] = [{
-        'port': platform['startPort'],
+        'port': engine['startPort'],
         'protocol': 'TCP'
     }]
     network_selector: dict = {

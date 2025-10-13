@@ -1,0 +1,10 @@
+[cols="1,1"]
+|===
+
+|Version 1.0.1
+a|* Renamed the `setup_config.json` keys `platform` and `kube` to `engine` and `orchestrator` respectively.
+
+|Version 1.0.0
+a|* Initial project
+
+|===

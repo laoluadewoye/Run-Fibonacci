@@ -57,7 +57,7 @@ def create_containers(base_folder: Path, project_folder: Path, setup_config: dic
     stage: dict = setup_config['stage']
     fs: dict = setup_config['fs']
     dns: dict = setup_config['dns']
-    network: dict = setup_config['platform']['network']
+    network: dict = setup_config['engine']['network']
     envs: dict = setup_config['envs']
 
     # Create output folder
@@ -107,7 +107,9 @@ def create_containers(base_folder: Path, project_folder: Path, setup_config: dic
 
         # Start the command creation
         print(f'Creating command script for container {server_stage_name}...')
-        container_command: list[str] = ['podman', 'run', '--detach', '--network', network['name'], f'--ip={server_stage_ip_addr}']
+        container_command: list[str] = [
+            'podman', 'run', '--detach', '--network', network['name'], f'--ip={server_stage_ip_addr}'
+        ]
 
         # Add a label
         container_command.extend([
@@ -118,7 +120,7 @@ def create_containers(base_folder: Path, project_folder: Path, setup_config: dic
         if server_stage_index == 1:
             print(f'Defining port binding for container {server_stage_name}...')
             container_command.extend([
-                '--publish', f'{setup_config['platform']['startPort']}:{setup_config['platform']['startPort']}'
+                '--publish', f'{setup_config['engine']['startPort']}:{setup_config['engine']['startPort']}'
             ])
 
         # Add secrets
@@ -139,12 +141,12 @@ def create_containers(base_folder: Path, project_folder: Path, setup_config: dic
             '--env', f'SERVER_STAGE_INDEX={server_stage_index}',
             '--env', f'SELF_LISTENING_ADDRESS={server_stage_ip_addr}',
             '--env', f'SELF_HEALTHCHECK_ADDRESS={server_stage_ip_addr}',
-            '--env', f'SELF_PORT={setup_config['platform']['startPort']}',
+            '--env', f'SELF_PORT={setup_config['engine']['startPort']}',
             '--env', f'SECRET_KEY_TARGET={envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}',
             '--env', f'SECRET_CERT_TARGET={envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}',
             '--env', f'SECRET_CA_CERT_TARGET={envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}',
             '--env', f'DEST_ADDRESS={dest_stage_hostname}',
-            '--env', f'DEST_PORT={setup_config['platform']['startPort']}',
+            '--env', f'DEST_PORT={setup_config['engine']['startPort']}',
             '--env', f'THROTTLE_INTERVAL={envs['throttleInterval']}',
             '--env', f'UPPER_BOUND={envs['upperBound']}'
         ])
@@ -158,11 +160,11 @@ def create_containers(base_folder: Path, project_folder: Path, setup_config: dic
         # Add healthcheck kill policy
         print(f'Defining health check and kill policy for container {server_stage_name}...')
         container_command.extend([
-            f'--health-cmd={setup_config['platform']['healthcheckCMD']}',
-            f'--health-on-failure={setup_config['platform']['containerFailPolicy']}'
+            f'--health-cmd={setup_config['engine']['healthcheckCMD']}',
+            f'--health-on-failure={setup_config['engine']['containerFailPolicy']}'
         ])
 
-        container_command.append(f'--health-on-failure={setup_config['platform']['containerFailPolicy']}')
+        container_command.append(f'--health-on-failure={setup_config['engine']['containerFailPolicy']}')
 
         # Add container name and hostname
         print(f'Defining name and hostname for container {server_stage_name}...')

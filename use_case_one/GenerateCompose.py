@@ -6,7 +6,7 @@ from pathlib import Path
 
 def create_compose(base_folder: Path, project_folder: Path, setup_config: dict, use_case_num: int) -> None:
     # Create subgroups to save space
-    network: dict = setup_config['platform']['network']
+    network: dict = setup_config['engine']['network']
     dns: dict = setup_config['dns']
     stage: dict = setup_config['stage']
     fs: dict = setup_config['fs']
@@ -66,18 +66,18 @@ def create_compose(base_folder: Path, project_folder: Path, setup_config: dict, 
             'hostname': server_stage_hostname,
             'extra_hosts': server_stage_mappings,
             'image': open(f'{project_folder}/{fs['imageVersionFp']}').read(),
-            'restart': setup_config['platform']['containerRestartPolicy'],
+            'restart': setup_config['engine']['containerRestartPolicy'],
             'environment': {
                 'SERVER_STAGE_COUNT': stage['count'],
                 'SERVER_STAGE_INDEX': server_stage_index,
                 'SELF_LISTENING_ADDRESS': server_stage_ip_addr,
                 'SELF_HEALTHCHECK_ADDRESS': server_stage_ip_addr,
-                'SELF_PORT': setup_config['platform']['startPort'],
+                'SELF_PORT': setup_config['engine']['startPort'],
                 'SECRET_KEY_TARGET': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['keyExt']}',
                 'SECRET_CERT_TARGET': f'{envs['tlsTarget']}/{envs['selfName']}.{fs['certExt']}',
                 'SECRET_CA_CERT_TARGET': f'{envs['tlsTarget']}/{dns['caName']}.{fs['certExt']}',
                 'DEST_ADDRESS': dest_stage_hostname,
-                'DEST_PORT': setup_config['platform']['startPort'],
+                'DEST_PORT': setup_config['engine']['startPort'],
                 'THROTTLE_INTERVAL': envs['throttleInterval'],
                 'UPPER_BOUND': envs['upperBound']
             },
@@ -106,7 +106,7 @@ def create_compose(base_folder: Path, project_folder: Path, setup_config: dict, 
         if server_stage_index == 1:
             print(f'Defining port binding for service {server_stage_name}...')
             compose_json['services'][server_stage_name]['ports'] = [
-                f'{setup_config['platform']['startPort']}:{setup_config['platform']['startPort']}'
+                f'{setup_config['engine']['startPort']}:{setup_config['engine']['startPort']}'
             ]
 
     # Fill in secrets
