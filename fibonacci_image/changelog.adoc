@@ -1,22 +1,22 @@
 [cols="1,1"]
 |===
 
-|Version 1.2.0
+a|Version 1.2.0 (Available tags are `latest`, `1.2.0`, `1.2.0-alpine`, `1.2.0-alma`)
 a|* Added new environmental variable `SERVER_API` To support multiple kinds of APIs.
 * Revised Dockerfile to use a base Alpine layer with Python manually installed rather than a Python base layer that is Alpine specific.
 * Added Alma linux version of server.
-* Risk: Python version is now 3.12 instead of 3.13 for consistency across platforms. Is looking into ways to get Alma back up a version up without too much added image size.
+* *Risk: Python version is now 3.12 instead of 3.13 for consistency across platforms. Is looking into ways to get Alma back up a version up without too much added image size.*
 * Tests are now run using Python instead of Powershell/Bash to automate testing different platforms, apis, and storage combinations in the future.
 
-|Version 1.1.0
+a|Version 1.1.0 (Available tags are `1.1.0`, `1.1.0-alpine`)
 a|* Split `SELF_ADDRESS` into `SELF_LISTENING_ADDRESS` and `SELF_HEALTHCHECK_ADDRESS` for better Pod capabilities.
 * Updated test scripts to reflect changes. Changed container testing scripts to first check what container engine is running.
 
-|Version 1.0.1
+a|Version 1.0.1 (Available tags are `1.0.1`, `1.0.1-alpine`)
 a|* Changed `SERVER_STAGE_INDEX` check to allow equality to `SERVER_STAGE_COUNT`
 * Added test scripts for both Windows and Linux systems
 
-|Version 1.0.0
+a|Version 1.0.0 (Available tags are `1.0.0`, `1.0.0-alpine`)
 a|* Initial image
 * generalized image components
 * Added README
