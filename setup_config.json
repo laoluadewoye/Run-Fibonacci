@@ -55,7 +55,10 @@
     },
     "server": {
         "api": "rest",
-        "datastore": "none"
+        "datastore": "none",
+        "elasticstack": {},
+        "mongodb": {},
+        "postgresql": {}
     },
     "stage": {
         "composeNameSuffix": "app",

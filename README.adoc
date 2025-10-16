@@ -240,10 +240,19 @@ There are two files that will be used across the entire project. The first is `s
 .. **Schema** -> JSON Object that contains the following keys:
 ... _api_
 .... **Definition** -> `server` member key that specifies the web api that should be used.
-.... **Schema** -> JSON string. Must be one of the following -> [rest]
+.... **Schema** -> JSON string. Must be one of the following -> [rest, grpc, soap, graphql, mqtt]
 ... _datastore_
 .... **Definition** -> `server` member key that specifies how data is stored.
-.... **Schema** -> JSON string. Must be one of the following -> [none, file]
+.... **Schema** -> JSON string. Must be one of the following -> [none, file, elasticstack, mongodb, postgresql]
+... _elasticstack_
+.... **Definition** -> `server` member key that specifies settings for ElasticStack.
+.... **Schema** -> JSON Object that contains the following keys:
+... _mongodb_
+.... **Definition** -> `server` member key that specifies settings for MongoDB.
+.... **Schema** -> JSON Object that contains the following keys:
+... _postgresql_
+.... **Definition** -> `server` member key that specifies settings for PostgreSQL.
+.... **Schema** -> JSON Object that contains the following keys:
 . _stage_
 .. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.
 .. **Schema** -> JSON Object that contains the following keys:

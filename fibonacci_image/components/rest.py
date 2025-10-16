@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify
+from sys import version
 from subprocess import run, CompletedProcess
 from threading import Thread
 from time import sleep
 from os import environ
 
+# Print version
+print(version, flush=True)
 
 # Get the server count
 assert 'SERVER_STAGE_COUNT' in environ

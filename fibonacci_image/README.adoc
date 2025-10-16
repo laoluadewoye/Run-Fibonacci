@@ -2,7 +2,7 @@
 :author: Laolu Adewoye
 :email: laoluadewoye@gmail.com>
 :description: Specification on how fibonacci server can be designed and configured.
-:keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api, curl, http, https
+:keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api, curl, http, https, alma
 
 == Versioning
 
@@ -21,7 +21,7 @@ include::changelog.adoc[]
 . OpenSSL
 . PowerShell or POSIX-compliant Shell
 . Curl
-. Python (version 3.13 is recommended)
+. Python (version 3.12 or higher is recommended, code is written in 3.13)
 
 == Explanation of Image
 
@@ -39,11 +39,11 @@ All important information about the server is printed to `STDOUT` using the Pyth
 
 === Files Used in Image
 
-The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_healthcheck.sh`, and `send_next_fib.sh`
+The four files used in this image are `gunicorn.conf.py`, `rest.py`, `send_healthcheck.sh`, and `send_next_fib.sh`. These files are located in the `components` folder.
 
-`gunicorn.conf.py` is the configuration file used by Gunicorn to tailor the server. This file specifies the network socket that the server listens on and the TLS files necessary for encrypted communication among other things. It is represented by the Gunicorn Server box in the diagram above.
+`gunicorn.conf.py` is the configuration file used by Gunicorn to tailor the server. This file specifies the Flask server to use, the network socket that the server listens on, and the TLS files necessary for encrypted communication among other things.
 
-`server.py` is the Flask definition file that is served by Gunicorn. This file specifies the logic for the API endpoints and instantiates the constants that are used during the server's runtime. It is represented by the Flask API box in the diagram above.
+`rest.py` is a Flask definition file that is served by Gunicorn. This file specifies REST logic for the API endpoints and instantiates the constants that are used during the server's runtime.
 
 `send_healthcheck.sh` is the shell script that is called by an external management process to check the server's health. It utilizes Curl to send an HTTPS message to the running server. It is represented by the Health Check Daemon box in the diagram above.
 
@@ -53,7 +53,9 @@ The four files used in this image are `gunicorn.conf.py`, `server.py`, `send_hea
 
 Here is a list of hardcoded details in the Dockerfile for the image. Feel free to change any of these values on your own system.
 
-. The image defines the `docker.io/library/python:3.13-alpine3.22` image as a base layer.
+. The image defines two platforms as options to run the server.
+.. Alpine Linux is the default platform used to run the server due to its lightweight nature. The image defines `docker.io/library/alpine:3.22` as the base layer image.
+.. Alma Linux is an additional platform used for cases where a RHEL variant is preferred. The image defines `docker.io/library/almalinux:10-minimal` as the base layer image.
 . The image defines the non-root user `app` to run the server.
 . The image defines server contents to be kept in the `/usr/src/app` directory. The user `app` is given ownership of this directory.
 . The image defines a healthcheck to monitor the state of the server.
@@ -68,28 +70,28 @@ Here is a list of hardcoded details in the Dockerfile for the image. Feel free t
 
 `README.adoc` is the file you are reading right now that explains everything about the image.
 
-`Dockerfile` is the file that defines the image.
-
 `changelog.adoc` is the secondary AsciiDoc file used to hold changelog information about the image.
 
 `latest_image.adoc` is an AsciiDoc file used to hold the fully qualified name of the latest image.
 
-`testing/test_image.ps1` is a PowerShell script used to test the image on Windows systems.
+`alpine.Dockerfile` is the file that defines the Alpine image.
 
-`testing/test_image.sh` is a Shell script used to test the image on Linux systems.
+`alma.Dockerfile` is the file that defines the Alma image.
 
-`testing/TestGenTLS.py` is a Python script used to create the TLS materials for the test_image scripts.
+`CreateImages.py` is the Python file used to create and push images and tags in one go.
 
-`testing/remove_test.ps1` is a PowerShell script used to remove test items on Windows systems.
+`testing/TestGenTLS.py` is a Python script used to create the TLS materials for the testing images.
 
-`testing/remove_test.sh` is a Shell script used to remove test items on Linux systems.
+`testing/TestVersion.py` is a Python script used to test settings and platforms of the fibonacci server.
 
 Note: For the test scripts, you will be on your own for scaling down the test. All that's created is a container and some TLS credential stuff though, so it should be easy.
 
 == Software Bill of Materials
 
-. Python Docker Official Image
-.. This image uses the Alpine 3.22 version of the Python 3.13 image by Default.
+. Docker Official Images
+.. This image uses the Alpine 3.22 and Alma 10 Minimal base layers.
+. Python
+.. This image uses Python 3.12 by Default.
 . Python Flask
 .. This image uses Flask version 3.1.2 by Default.
 . Python Gunicorn
@@ -101,6 +103,9 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 
 **Important: All environmental variables in this section are required for the server to work. They do not have defaults.**
 
+. _SERVER_API_
+.. **Definition** -> The type of Server Web API to use.
+.. **Schema** -> Must be one of a set of constants defined for the `server.api` key in `setup_config.json`.
 . _SERVER_STAGE_COUNT_
 .. **Definition** -> The number of server stages in the test network.
 .. **Schema** -> Must be a number that can be turned into a Python integer.

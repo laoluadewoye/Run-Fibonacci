@@ -2,7 +2,7 @@ from multiprocessing import cpu_count
 from os import environ
 
 # Defaults
-wsgi_app = 'server:app'
+wsgi_app = f'{environ.get('SERVER_API')}:app'
 workers = cpu_count() * 2 + 1
 
 # Output handling
