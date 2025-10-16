@@ -10,7 +10,8 @@ def build_push_image(dockerfile_path, image_tag, dir_context, push=False):
 
     # Push image
     if push:
-        print('Pushing image')
+        output: CompletedProcess = run(['docker', 'push', image_tag])
+        assert output.returncode == 0, output.stderr
 
 
 # Push images
