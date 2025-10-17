@@ -12,9 +12,13 @@ from requests import request, Response
 SERVER_API: str = environ.get('SERVER_API')
 SERVER_DATASTORE: str = environ.get('SERVER_DATASTORE')
 
-# Specify default datastore log location
+# Specify default datastore log location and log counts
+DATASTORE_FILEPATH: str = environ.get('DATASTORE_FILEPATH')
 DATASTORE_DEFAULT_FILEPATH: str = environ.get('DATASTORE_DEFAULT_FILEPATH')
 DATASTORE_OPERATIONS_FILEPATH: str = environ.get('DATASTORE_OPERATIONS_FILEPATH')
+DATASTORE_LOG_COUNT: int = 0
+DATASTORE_DEFAULT_LOG_COUNT: int = 0
+DATASTORE_OPERATIONS_LOG_COUNT: int = 0
 
 # Specify datastore network socket
 DATASTORE_ADDRESS: str = environ.get('DATASTORE_ADDRESS')
@@ -69,7 +73,7 @@ def create_log(log_type: LogType, log_kind: list[LogKind], server_config: dict, 
         'kind': ';'.join([lk.value for lk in log_kind]),
         'time': str(time()),
         'config': b64encode(dumps(server_config).encode()).decode(),
-        'details': details.encode()
+        'details': details
     }
 
     # Hash the contents of the log and return
@@ -78,16 +82,36 @@ def create_log(log_type: LogType, log_kind: list[LogKind], server_config: dict, 
 
 
 def save_log(filepath: str, cur_log: dict, config: dict, is_operation: bool = False):
+    global DATASTORE_FILEPATH
+    global DATASTORE_DEFAULT_FILEPATH
     global DATASTORE_OPERATIONS_FILEPATH
+    global DATASTORE_LOG_COUNT
+    global DATASTORE_DEFAULT_LOG_COUNT
+    global DATASTORE_OPERATIONS_LOG_COUNT
 
+    # Get log count
+    if filepath == DATASTORE_FILEPATH:
+        DATASTORE_LOG_COUNT += 1
+        cur_log_count = DATASTORE_LOG_COUNT
+    elif filepath == DATASTORE_DEFAULT_FILEPATH:
+        DATASTORE_DEFAULT_LOG_COUNT += 1
+        cur_log_count = DATASTORE_DEFAULT_LOG_COUNT
+    elif filepath == DATASTORE_OPERATIONS_FILEPATH:
+        DATASTORE_OPERATIONS_LOG_COUNT += 1
+        cur_log_count = DATASTORE_OPERATIONS_LOG_COUNT
+    else:
+        cur_log_count = -1
+    assert cur_log_count > 0, 'File path should match one of the set paths.'
+
+    # Write down everything
     try:
         if not exists(filepath):
             with open(filepath, 'w') as ds_file:
-                ds_file.write(','.join(cur_log.keys()) + '\n')
-                ds_file.write(','.join(cur_log.values()) + '\n')
+                ds_file.write('id,' + ','.join(cur_log.keys()) + '\n')
+                ds_file.write(f'{cur_log_count},' + ','.join(cur_log.values()) + '\n')
         else:
             with open(filepath, 'a') as ds_file:
-                ds_file.write(','.join(cur_log.values()) + '\n')
+                ds_file.write(f'{cur_log_count},' + ','.join(cur_log.values()) + '\n')
         success: bool = True
         details: str ='Log saving event successful.'
     except FileNotFoundError:

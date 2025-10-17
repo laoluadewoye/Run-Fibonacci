@@ -1,5 +1,5 @@
-from flask import Flask, request, jsonify
-from requests import request, Response
+from flask import Flask, request as flask_request, jsonify
+from requests import request as requests_request, Response
 from sys import version
 from threading import Thread
 from time import sleep
@@ -109,7 +109,7 @@ app = Flask(__name__)
 def trigger_send(new_fib_one, new_fib_two, snf_log_id):
     global SERVER_CONFIG
 
-    response: Response = request(
+    response: Response = requests_request(
         method='POST',
         url=f'https://{DEST_ADDRESS}:{DEST_PORT}',
         json={'fib_one': new_fib_one, 'fib_two': new_fib_two},
@@ -129,7 +129,7 @@ def process_fib_numbers():
     global SNF_LOG_ID
 
     # Get numbers
-    fib_numbers = request.get_json(force=True, silent=True)
+    fib_numbers = flask_request.get_json(force=True, silent=True)
     if fib_numbers is None:
         msg: str = f'POST request failed. Unable to retrieve numbers.'
         report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.MAIN], SERVER_CONFIG, msg)
@@ -235,7 +235,7 @@ def process_log():
     global DATASTORE_FILEPATH
 
     # Get log
-    cur_log = request.get_json(force=True, silent=True)
+    cur_log = flask_request.get_json(force=True, silent=True)
     if cur_log is None:
         msg: str = f'POST datastore request failed. Unable to retrieve log.'
         report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_CONFIG, msg)

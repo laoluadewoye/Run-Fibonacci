@@ -20,12 +20,12 @@ push_image = False
 # Create constants
 BASE_FOLDER: Path = Path(__file__).resolve().parent
 latest_image: str = open(f'{BASE_FOLDER}/latest_image.adoc').read()
-platforms: list[str] = [dockerfile.split('\\')[-1].split('.')[0] for dockerfile in glob(f'{BASE_FOLDER}/*Dockerfile')]
+platforms: list[str] = ['alma', 'alpine']
 
 # Create platform specific
 for platform in platforms:
     build_push_image(f'{platform}.Dockerfile', f'{latest_image}-{platform}', BASE_FOLDER, push_image)
 
-# # Create defaults
+# Create defaults
 build_push_image('alpine.Dockerfile', f'{latest_image.split(':')[0]}:latest', BASE_FOLDER, push_image)
 build_push_image('alpine.Dockerfile', latest_image, BASE_FOLDER, push_image)

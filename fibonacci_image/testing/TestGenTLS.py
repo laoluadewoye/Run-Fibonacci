@@ -8,7 +8,7 @@ from ipaddress import ip_address
 from pathlib import Path
 
 
-def create_key_cert(subject: x509.Name, san_names: list[str], san_ip: str, cert_days: int, public_exponent: int,
+def create_key_cert(subject: x509.Name, san_names: list[str], san_ips: list[str], cert_days: int, public_exponent: int,
                     key_length: int, issuer_key=None, issuer_cert=None, is_ca: bool = False,
                     is_key_encrypter: bool = False, is_cert_signer: bool = False) -> tuple:
     # Create key
@@ -30,9 +30,9 @@ def create_key_cert(subject: x509.Name, san_names: list[str], san_ip: str, cert_
     cert = cert.not_valid_after(datetime.now(timezone.utc) + timedelta(days=cert_days))
 
     # Add extensions
-    sans = [x509.DNSName(san_name) for san_name in san_names]
-    sans.append(x509.IPAddress(ip_address(san_ip)))
-    cert = cert.add_extension(x509.SubjectAlternativeName(sans), critical=False)
+    formatted_san_names = [x509.DNSName(san_name) for san_name in san_names]
+    formatted_san_names.extend([x509.IPAddress(ip_address(san_ip)) for san_ip in san_ips])
+    cert = cert.add_extension(x509.SubjectAlternativeName(formatted_san_names), critical=False)
     cert = cert.add_extension(x509.BasicConstraints(ca=is_ca, path_length=None), critical=True)
     cert = cert.add_extension(
         x509.KeyUsage(
@@ -78,11 +78,16 @@ ca_subject: x509.Name = x509.Name([
     x509.NameAttribute(NameOID.COMMON_NAME, ca_cert_name),
 ])
 ca_key, ca_cert = create_key_cert(
-    subject=ca_subject, san_names=ca_alt_names, san_ip='127.0.0.1', cert_days=2, public_exponent=65537, key_length=4096,
+    subject=ca_subject, san_names=ca_alt_names, san_ips=['127.0.0.1'], cert_days=2, public_exponent=65537, key_length=4096,
     is_ca=True, is_cert_signer=True
 )
 
 # Generate external TLS materials
+num_combos = len(['rest']) * len(['alma', 'alpine']) * len(['none', 'file'])
+external_alt_ips: list[str] = ['127.0.0.1']
+for i in range(num_combos):
+    external_alt_ips.append(f'172.20.0.{i+1}')
+
 print('Creating external TLS materials...')
 external_cert_name: str = 'external.test.com'
 external_alt_names: list[str] = [external_cert_name, 'localhost']
@@ -91,7 +96,7 @@ external_subject: x509.Name = x509.Name([
     x509.NameAttribute(NameOID.COMMON_NAME, external_cert_name),
 ])
 external_key, external_cert = create_key_cert(
-    subject=external_subject, san_names=external_alt_names, san_ip='127.0.0.1', cert_days=1, public_exponent=65537,
+    subject=external_subject, san_names=external_alt_names, san_ips=external_alt_ips, cert_days=1, public_exponent=65537,
     key_length=4096, issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
 )
 

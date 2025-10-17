@@ -7,6 +7,7 @@ a| * Added new `datastore_utils.py` for handling log definitions, log output, an
 * Updated Dockerfiles to copy entire `components` folder rather than individual files, and to install Python libraries using a requirements file.
 * Added new log saving API to `rest.py`.
 * Converted shell scripts for healthcheck and start API to Python programs. Adjusted `rest.py` accordingly.
+* Servers now run python from a virtual environment instead of a system environment.
 
 a|Version 1.2.0 (Available tags are `latest`, `1.2.0`, `1.2.0-alpine`, `1.2.0-alma`)
 a|* Added new environmental variable `SERVER_API` To support multiple kinds of APIs.
