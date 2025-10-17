@@ -125,7 +125,22 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
         key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
     )
 
-    # Save TLS materials for ingress, external, and CA
+    # Generate datastore TLS materials
+    print('Creating datastore TLS materials...')
+    datastore_cert_name: str = f'{dns['datastoreName']}.{dns['domain']}'
+    datastore_alt_names: list[str] = [datastore_cert_name, dns['domain'], dns['default']]
+    datastore_ip_addr: str = setup_config['server']['datastore']['networkAddress']
+    datastore_subject: x509.Name = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
+        x509.NameAttribute(NameOID.COMMON_NAME, datastore_cert_name),
+    ])
+    datastore_key, datastore_cert = create_key_cert(
+        subject=datastore_subject, san_names=datastore_alt_names, san_ip=datastore_ip_addr,
+        cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
+        key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+    )
+
+    # Save TLS materials for CA, ingress, external, and datastore
     print('Saving CA TLS materials...')
     with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['keyExt']}', 'w') as ca_key_file:
         ca_key_file.write(
@@ -166,6 +181,19 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
 
     with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['certExt']}', 'w') as external_cert_file:
         external_cert_file.write(external_cert.public_bytes(serialization.Encoding.PEM).decode())
+
+    print('Saving datastore TLS materials...')
+    with open(f'{project_folder}/{tls_folder}/{dns['datastoreName']}.{fs['keyExt']}', 'w') as datastore_key_file:
+        datastore_key_file.write(
+            datastore_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode()
+        )
+
+    with open(f'{project_folder}/{tls_folder}/{dns['datastoreName']}.{fs['certExt']}', 'w') as datastore_cert_file:
+        datastore_cert_file.write(datastore_cert.public_bytes(serialization.Encoding.PEM).decode())
 
     # Generate server stage TLS materials
     for i in range(stage['count']):

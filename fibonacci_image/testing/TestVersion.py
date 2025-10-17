@@ -59,6 +59,7 @@ for platform, api in test_combos:
         '-v', f'{BASE_FOLDER}/test_self.crt:/run/secrets/self.crt',
         '-v', f'{BASE_FOLDER}/test_ca.crt:/run/secrets/ca.crt',
         '-e', f'SERVER_API={api}',
+        '-e', 'SERVER_DATASTORE=none',
         '-e', 'SERVER_STAGE_COUNT=1',
         '-e', 'SERVER_STAGE_INDEX=1',
         '-e', 'SELF_LISTENING_ADDRESS=0.0.0.0',

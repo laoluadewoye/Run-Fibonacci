@@ -2,6 +2,7 @@
     "dns": {
         "countryInitials": "US",
         "domain": "fibonaccitest.com",
+        "datastoreName": "datastore",
         "default": "localhost",
         "defaultIP": "127.0.0.1",
         "defaultListeningIP": "0.0.0.0",
@@ -18,7 +19,7 @@
             "range": "172.19.0.0/24",
             "gateway": "172.19.0.1",
             "prefix": "172.19.0",
-            "startAddress": 10
+            "startAddress": 20
         },
         "startPort": 8080,
         "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
@@ -55,10 +56,20 @@
     },
     "server": {
         "api": "rest",
-        "datastore": "none",
-        "elasticstack": {},
-        "mongodb": {},
-        "postgresql": {}
+        "datastore": {
+            "type": "none",
+            "networkAddress": "172.19.0.11",
+            "networkPort": 9000,
+            "elasticstack": {},
+            "file": {
+                "defaultFolder": "/tmp",
+                "format": "csv",
+                "fileFolder": "/usr/share/datastore",
+                "fileName": "datastore.csv"
+            },
+            "mongodb": {},
+            "postgresql": {}
+        }
     },
     "stage": {
         "composeNameSuffix": "app",

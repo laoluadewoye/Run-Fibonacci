@@ -106,6 +106,9 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 . _SERVER_API_
 .. **Definition** -> The type of Server Web API to use.
 .. **Schema** -> Must be one of a set of constants defined for the `server.api` key in `setup_config.json`.
+. _SERVER_DATASTORE_
+.. **Definition** -> The type of Datastore to use.
+.. **Schema** -> Must be one of a set of constants defined for the `server.datastore` key in `setup_config.json`.
 . _SERVER_STAGE_COUNT_
 .. **Definition** -> The number of server stages in the test network.
 .. **Schema** -> Must be a number that can be turned into a Python integer.
@@ -135,6 +138,12 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 .. **Schema** -> Must be either a IPv4 address or a FQDN.
 . _DEST_PORT_
 .. **Definition** -> The network port of the server stage that the server should contact in the test network.
+.. **Schema** -> Must be non-privileged port number.
+. _DATASTORE_ADDRESS_
+.. **Definition** -> The network address of the datastore that the server should contact in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+. _DATASTORE_PORT_
+.. **Definition** -> The network port of the datastore that the server should contact in the test network.
 .. **Schema** -> Must be non-privileged port number.
 . _THROTTLE_INTERVAL_
 .. **Definition** -> The interval that the server should wait in seconds between receiving fibonacci numbers and sending fibonacci numbers.
