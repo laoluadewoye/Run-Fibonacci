@@ -1,6 +1,5 @@
 from pathlib import Path
 from subprocess import run, CompletedProcess
-from glob import glob
 
 
 def build_push_image(dockerfile_path, image_tag, dir_context, push=False):

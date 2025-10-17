@@ -1,7 +1,6 @@
 from pathlib import Path
 import os
 from subprocess import run, CompletedProcess
-from glob import glob
 from itertools import product
 from time import sleep
 from requests import request, Response
@@ -30,9 +29,9 @@ def create_server(folder: Path, server_network: str, server_ip: str, server_port
         '-e', f'DEST_PORT={server_port}',
         '-e', f'DATASTORE_ADDRESS={server_datastore_addr}',
         '-e', f'DATASTORE_PORT={server_datastore_port}',
-        '-e', 'DATASTORE_FILEPATH=/usr/share/datastore/datastore.csv',
-        '-e', 'DATASTORE_DEFAULT_FILEPATH=/tmp/datastore.csv',
-        '-e', 'DATASTORE_OPERATIONS_FILEPATH=/usr/share/datastore/operations.csv',
+        '-e', 'DATASTORE_FILEPATH=/tmp/datastore.csv',
+        '-e', 'DATASTORE_DEFAULT_FILEPATH=/tmp/default.csv',
+        '-e', 'DATASTORE_OPERATIONS_FILEPATH=/tmp/operations.csv',
         '-e', 'THROTTLE_INTERVAL=5',
         '-e', 'UPPER_BOUND=4000000000',
         '--name', server_name,
@@ -91,9 +90,15 @@ run([command, 'network', 'create', '--subnet', '172.20.0.0/16', test_fib_net_nam
 
 # Run the test containers
 for api in apis:
+    datastore_platform: str = 'alpine'
+
     # Create test datastores
     for datastore in datastores:
-        datastore_platform: str = 'alpine'
+        print('------------------------------------------------------------------')
+        print('Creating datastore running with the following combination...')
+        print(f'Platform: {datastore_platform.title()}')
+        print(f'API: {api.upper()}')
+        print(f'Datastore: {datastore.title()}')
         datastore_name: str = f'test-fib-{api}-{datastore}-{datastore_platform}-datastore'
 
         # Check if test datastore already exist and delete if needed
@@ -117,6 +122,7 @@ for api in apis:
     # Run combinations
     for platform, datastore in test_combos:
         # Create test server
+        print('------------------------------------------------------------------')
         print('Testing fibonacci server running with the following combination...')
         print(f'Platform: {platform.title()}')
         print(f'API: {api.upper()}')
@@ -130,8 +136,8 @@ for api in apis:
             run([command, 'rm', server_name])
 
         # Create test server
-        datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore']['ip']
-        datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore']['port']
+        datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-{datastore_platform}-datastore']['ip']
+        datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-{datastore_platform}-datastore']['port']
         create_server(
             BASE_FOLDER, test_fib_net_name, f'172.20.0.{cur_ip}', cur_port, latest_image, platform, api,
             datastore, datastore_ip, datastore_port, server_name

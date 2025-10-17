@@ -3,12 +3,13 @@ from requests import request as requests_request, Response
 from sys import version
 from threading import Thread
 from time import sleep
-from os import environ
+from os import environ, getpid
 from datastore_utils import APIType, DatastoreType, LogType, LogKind, report_log, save_log
 
 # Create a server configuration
 SERVER_CONFIG = {
     'PYTHON_INFO': version,
+    'WORKER_ID': getpid(),
     'SERVER_API': environ.get('SERVER_API', 'N/A'),
     'SERVER_DATASTORE': environ.get('SERVER_DATASTORE', 'N/A'),
     'SERVER_STAGE_COUNT': environ.get('SERVER_STAGE_COUNT', 'N/A'),

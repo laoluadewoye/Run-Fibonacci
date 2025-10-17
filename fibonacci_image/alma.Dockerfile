@@ -29,7 +29,7 @@ RUN chown --recursive app:app /usr/src/app/
 USER app
 
 # Setup the healthcheck
-HEALTHCHECK --start-period=10s --interval=10s --timeout=5s --retries=3 CMD /usr/src/app/send_healthcheck.py
+HEALTHCHECK --start-period=10s --interval=10s --timeout=5s --retries=3 CMD python3 /usr/src/app/send_healthcheck.py
 
 # Run the server
 ENTRYPOINT ["gunicorn"]

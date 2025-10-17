@@ -1,15 +1,16 @@
 [cols="1,1"]
 |===
 
-a|Version 2.0.0 (In Development)
+a|Version 2.0.0 (Available tags are `latest`, `2.0.0`, `2.0.0-alpine`, `2.0.0-alma`)
 a| * Added new `datastore_utils.py` for handling log definitions, log output, and log saving. Updated `rest.py` to reflect changes.
 * Added new environmental variables `SERVER_DATASTORE`, `DATASTORE_ADDRESS`, `DATASTORE_PORT`, `DATASTORE_FILEPATH`, `DATASTORE_DEFAULT_FILEPATH`, and `DATASTORE_OPERATIONS_FILEPATH` to support multiple kinds of datastores.
 * Updated Dockerfiles to copy entire `components` folder rather than individual files, and to install Python libraries using a requirements file.
 * Added new log saving API to `rest.py`.
 * Converted shell scripts for healthcheck and start API to Python programs. Adjusted `rest.py` accordingly.
 * Servers now run python from a virtual environment instead of a system environment.
+* *Warning: Only rest API and none/file datastores are available*
 
-a|Version 1.2.0 (Available tags are `latest`, `1.2.0`, `1.2.0-alpine`, `1.2.0-alma`)
+a|Version 1.2.0 (Available tags are `1.2.0`, `1.2.0-alpine`, `1.2.0-alma`)
 a|* Added new environmental variable `SERVER_API` To support multiple kinds of APIs.
 * Revised Dockerfile to use a base Alpine layer with Python manually installed rather than a Python base layer that is Alpine specific.
 * Added Alma linux version of server.
