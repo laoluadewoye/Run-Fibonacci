@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
+from requests import request, Response
 from sys import version
-from subprocess import run, CompletedProcess
 from threading import Thread
 from time import sleep
 from os import environ
-from datastore_utils import APIType, DatastoreType, LogType, LogKind, save_log
+from datastore_utils import APIType, DatastoreType, LogType, LogKind, report_log, save_log
 
 # Create a server configuration
 SERVER_CONFIG = {
@@ -23,41 +23,59 @@ SERVER_CONFIG = {
     'DEST_PORT': environ.get('DEST_PORT', 'N/A'),
     'DATASTORE_ADDRESS': environ.get('DATASTORE_ADDRESS', 'N/A'),
     'DATASTORE_PORT': environ.get('DATASTORE_PORT', 'N/A'),
+    'DATASTORE_FILEPATH': environ.get('DATASTORE_FILEPATH', 'N/A'),
+    'DATASTORE_DEFAULT_FILEPATH': environ.get('DATASTORE_DEFAULT_FILEPATH', 'N/A'),
+    'DATASTORE_OPERATIONS_FILEPATH': environ.get('DATASTORE_OPERATIONS_FILEPATH', 'N/A'),
     'THROTTLE_INTERVAL': environ.get('THROTTLE_INTERVAL', 'N/A'),
     'UPPER_BOUND': environ.get('UPPER_BOUND', 'N/A'),
 }
 
 # Create log from version
-save_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, version)
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, version)
+
+# Get the TLS materials
+assert 'SECRET_KEY_TARGET' in environ
+SECRET_KEY_TARGET: str = environ.get('SECRET_KEY_TARGET')
+assert 'SECRET_CERT_TARGET' in environ
+SECRET_CERT_TARGET: str = environ.get('SECRET_CERT_TARGET')
+assert 'SECRET_CA_CERT_TARGET' in environ
+SECRET_CA_CERT_TARGET: str = environ.get('SECRET_CA_CERT_TARGET')
+
+# Get the datastore filepaths
+assert 'DATASTORE_DEFAULT_FILEPATH' in environ
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
+           f'The datastore default log location is {environ.get('DATASTORE_DEFAULT_FILEPATH')}.')
+assert 'DATASTORE_OPERATIONS_FILEPATH' in environ
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
+           f'The datastore operations log location is {environ.get('DATASTORE_OPERATIONS_FILEPATH')}.')
+assert 'DATASTORE_FILEPATH' in environ
+DATASTORE_FILEPATH: str = environ.get('DATASTORE_FILEPATH')
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'The datastore log location is {DATASTORE_FILEPATH}.')
 
 # Get the server API
 assert 'SERVER_API' in environ
 SERVER_API: str = environ.get('SERVER_API')
 assert SERVER_API in [member.value for member in APIType]
-save_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'The server API is {SERVER_API}.')
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'The server API is {SERVER_API}.')
 
 # Get the server datastore
 assert 'SERVER_DATASTORE' in environ
 SERVER_DATASTORE: str = environ.get('SERVER_DATASTORE')
 assert SERVER_DATASTORE in [member.value for member in DatastoreType]
-save_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'The server datastore is {SERVER_DATASTORE}.')
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'The server datastore is {SERVER_DATASTORE}.')
 
 # Get the server count
 assert 'SERVER_STAGE_COUNT' in environ
 SERVER_STAGE_COUNT: int = int(environ.get('SERVER_STAGE_COUNT'))
-save_log(
-    LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
-    f'Total amount of servers in the network is {SERVER_STAGE_COUNT}.'
-)
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
+           f'Total amount of servers in the network is {SERVER_STAGE_COUNT}.')
 
 # Get the server index
 assert 'SERVER_STAGE_INDEX' in environ
 SERVER_STAGE_INDEX: int = int(environ.get('SERVER_STAGE_INDEX'))
 assert 0 < SERVER_STAGE_INDEX <= SERVER_STAGE_COUNT
-save_log(
-    LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
-    f'Server index validated. Index is {SERVER_STAGE_INDEX}.'
-)
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
+           f'Server index validated. Index is {SERVER_STAGE_INDEX}.')
 
 # Get destination socket
 assert 'DEST_ADDRESS' in environ
@@ -65,23 +83,19 @@ DEST_ADDRESS: str = environ.get('DEST_ADDRESS')
 
 assert 'DEST_PORT' in environ
 DEST_PORT: str = environ.get('DEST_PORT')
-save_log(
-    LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
-    f'Destination socket created. Socket is {DEST_ADDRESS} at port {DEST_PORT}.'
-)
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
+           f'Destination socket created. Socket is {DEST_ADDRESS} at port {DEST_PORT}.')
 
 # Get throttle time
 assert 'THROTTLE_INTERVAL' in environ
 THROTTLE_INTERVAL: int = int(environ.get('THROTTLE_INTERVAL'))
-save_log(
-    LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
-    f'Throttle interval set to {THROTTLE_INTERVAL} second(s).'
-)
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG,
+           f'Throttle interval set to {THROTTLE_INTERVAL} second(s).')
 
 # Get the upper bound
 assert 'UPPER_BOUND' in environ
 UPPER_BOUND: int = int(environ.get('UPPER_BOUND'))
-save_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'Upper bound of test set to {UPPER_BOUND}.')
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_CONFIG, f'Upper bound of test set to {UPPER_BOUND}.')
 
 # Start the log ID rotation
 SNF_LOG_ID: str = 'N/A'
@@ -93,37 +107,39 @@ app = Flask(__name__)
 
 # Define a sending thread
 def trigger_send(new_fib_one, new_fib_two, snf_log_id):
-    snf_result: CompletedProcess = run(
-        ['./send_next_fib.sh', str(new_fib_one), str(new_fib_two), DEST_ADDRESS, DEST_PORT],
-        capture_output=True, 
-        text=True
+    global SERVER_CONFIG
+
+    response: Response = request(
+        method='POST',
+        url=f'https://{DEST_ADDRESS}:{DEST_PORT}',
+        json={'fib_one': new_fib_one, 'fib_two': new_fib_two},
+        cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
+        verify=SECRET_CA_CERT_TARGET
     )
-    save_log(
-        LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_CONFIG,
-        f'Return Code for Message ID {snf_log_id}: {snf_result.returncode}'
-    )
-    save_log(
-        LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_CONFIG,
-        f'Standard Output for Message ID {snf_log_id}: {snf_result.stdout}'
-    )
-    save_log(
-        LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_CONFIG,
-        f'Error for Message ID {snf_log_id}: {snf_result.stderr}'
-    )
+    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_CONFIG,
+               f'Return code for message ID {snf_log_id}: {response.status_code}')
+    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_CONFIG,
+               f'Return info for message ID {snf_log_id}: {response.json()}')
 
 
 # Create route processing logic
 @app.route('/', methods=['POST'])
 def process_fib_numbers():
+    global SERVER_CONFIG
     global SNF_LOG_ID
 
+    # Get numbers
+    fib_numbers = request.get_json(force=True, silent=True)
+    if fib_numbers is None:
+        msg: str = f'POST request failed. Unable to retrieve numbers.'
+        report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.MAIN], SERVER_CONFIG, msg)
+        return jsonify({'status': 'Fail', 'message': msg, 'result': SNF_LOG_ID}), 422
+
     # Ingest numbers
-    fib_one: int = int(request.form['fib_one'])
-    fib_two: int = int(request.form['fib_two'])
-    save_log(
-        LogType.RECEIVE, [LogKind.ONCALL, LogKind.PROCESS], SERVER_CONFIG,
-        f'Retrieved numbers {fib_one} and {fib_two} in fibonacci sequence.'
-    )
+    fib_one: int = int(fib_numbers['fib_one'])
+    fib_two: int = int(fib_numbers['fib_two'])
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.MAIN], SERVER_CONFIG,
+               f'Retrieved numbers {fib_one} and {fib_two} in fibonacci sequence.')
 
     # Create new numbers
     if fib_two > 0:  # The sequence already started
@@ -133,14 +149,10 @@ def process_fib_numbers():
         new_fib_one: int = 0
         new_fib_two: int = 1
 
-    save_log(
-        LogType.RECEIVE, [LogKind.ONCALL, LogKind.PROCESS], SERVER_CONFIG,
-        f'Next fibonacci number determined to be {new_fib_two}.'
-    )
-    save_log(
-        LogType.RECEIVE, [LogKind.ONCALL, LogKind.PROCESS], SERVER_CONFIG,
-        f'Sending numbers {new_fib_one} and {new_fib_two} in fibonacci sequence.'
-    )
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.MAIN], SERVER_CONFIG,
+               f'Next fibonacci number determined to be {new_fib_two}.')
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.MAIN], SERVER_CONFIG,
+               f'Sending numbers {new_fib_one} and {new_fib_two} in fibonacci sequence.')
 
     # Artificial throttling
     sleep(THROTTLE_INTERVAL)
@@ -157,10 +169,8 @@ def process_fib_numbers():
         msg: str = f'POST request succeeded. Sent off fibonacci numbers.'
         return_code: int = 202
     else:  # Return that the upper bound has been reached
-        save_log(
-            LogType.SEND, [LogKind.ONCALL, LogKind.PROCESS], SERVER_CONFIG,
-            'Reached Upper Bound. Stopping Sending.'
-        )
+        report_log(LogType.SEND, [LogKind.ONCALL, LogKind.MAIN], SERVER_CONFIG,
+                   'Reached upper bound. Stopping sending.')
 
         msg: str = f'POST request succeeded. Reached upper bound.'
         return_code: int = 200
@@ -169,23 +179,22 @@ def process_fib_numbers():
     return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), return_code
 
 
-# Create route processing logic
+# Create healthcheck logic
 @app.route('/healthcheck', methods=['GET'])
 def get_healthcheck():
+    global SERVER_CONFIG
     global SNF_LOG_ID
     global LAST_SNF_LOG_ID
 
-    save_log(
-        LogType.RECEIVE, [LogKind.ONCALL, LogKind.HEALTHCHECK], SERVER_CONFIG,
-        'GET healthcheck request received.'
-    )
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.HEALTHCHECK], SERVER_CONFIG,
+               'GET healthcheck request received.')
 
     # Compare IDs
     if LAST_SNF_LOG_ID != SNF_LOG_ID: 
         msg: str = 'GET healthcheck request succeeded. Server has processed a new step.'
     else:
         msg: str = 'GET healthcheck request succeeded. Server is waiting for some reason.'
-    save_log(LogType.SEND, [LogKind.ONCALL, LogKind.HEALTHCHECK], SERVER_CONFIG, msg)
+    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.HEALTHCHECK], SERVER_CONFIG, msg)
 
     # Update Last ID for later healthcheck
     LAST_SNF_LOG_ID = SNF_LOG_ID
@@ -197,9 +206,10 @@ def get_healthcheck():
 # Create starting logic
 @app.route('/start', methods=['GET'])
 def start_fib():
+    global SERVER_CONFIG
     global SNF_LOG_ID
 
-    save_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.START], SERVER_CONFIG, 'GET start request received.')
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.START], SERVER_CONFIG, 'GET start request received.')
 
     # Set the log ID to the starting default
     SNF_LOG_ID = f'{SERVER_STAGE_INDEX}-0-0'
@@ -212,10 +222,36 @@ def start_fib():
 
     # Send the response back
     msg: str = f'GET start request succeeded. Started fibonacci sequence.'
-    save_log(LogType.SEND, [LogKind.ONCALL, LogKind.START], SERVER_CONFIG, msg)
+    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.START], SERVER_CONFIG, msg)
 
     return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), 202
 
+
+# Create datastore logic
 @app.route('/datastore', methods=['POST'])
-def save_log():
-    ...
+def process_log():
+    global SERVER_CONFIG
+    global SNF_LOG_ID
+    global DATASTORE_FILEPATH
+
+    # Get log
+    cur_log = request.get_json(force=True, silent=True)
+    if cur_log is None:
+        msg: str = f'POST datastore request failed. Unable to retrieve log.'
+        report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_CONFIG, msg)
+        return jsonify({'status': 'Fail', 'message': msg, 'result': SNF_LOG_ID}), 422
+
+    # Save log to file
+    success, op_success = save_log(DATASTORE_FILEPATH, cur_log, SERVER_CONFIG)
+    if success and op_success:
+        msg: str = f'POST datastore request succeeded. Saved log.'
+        report_log(LogType.SEND, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_CONFIG, msg)
+        return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), 200
+    if success and not op_success:
+        msg: str = f'POST datastore request succeeded. Saved log. Subsequent operation log saving failed.'
+        report_log(LogType.SEND, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_CONFIG, msg)
+        return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), 200
+    else:
+        msg: str = f'POST datastore request failed. Saving log to file failed.'
+        report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_CONFIG, msg)
+        return jsonify({'status': 'Fail', 'message': msg, 'result': SNF_LOG_ID}), 500

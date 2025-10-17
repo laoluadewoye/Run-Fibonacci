@@ -103,51 +103,79 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 
 **Important: All environmental variables in this section are required for the server to work. They do not have defaults.**
 
+
 . _SERVER_API_
 .. **Definition** -> The type of Server Web API to use.
 .. **Schema** -> Must be one of a set of constants defined for the `server.api` key in `setup_config.json`.
+
 . _SERVER_DATASTORE_
 .. **Definition** -> The type of Datastore to use.
 .. **Schema** -> Must be one of a set of constants defined for the `server.datastore` key in `setup_config.json`.
+
 . _SERVER_STAGE_COUNT_
 .. **Definition** -> The number of server stages in the test network.
 .. **Schema** -> Must be a number that can be turned into a Python integer.
+
 . _SERVER_STAGE_INDEX_
 .. **Definition** -> The server stage designator of the server in the test network.
 .. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT or equal to SERVER_STAGE_COUNT.
+
 . _SELF_LISTENING_ADDRESS_
 .. **Definition** -> The network address the server binds to in the test network.
 .. **Schema** -> Must be either a IPv4 address or a FQDN.
+
 . _SELF_HEALTHCHECK_ADDRESS_
 .. **Definition** -> The network address the server uses to call itself in the test network.
 .. **Schema** -> Must be either a IPv4 address or a FQDN.
+
 . _SELF_PORT_
 .. **Definition** -> The network port of the server in the test network.
 .. **Schema** -> Must be non-privileged port number.
+
 . _SECRET_KEY_TARGET_
 .. **Definition** -> The location of the personal TLS encryption key of the server in the test network.
 .. **Schema** -> Must be a UNIX absolute filepath.
+
 . _SECRET_CERT_TARGET_
 .. **Definition** -> The location of the personal TLS certificate of the server in the test network.
 .. **Schema** -> Must be a UNIX absolute filepath.
+
 . _SECRET_CA_CERT_TARGET_
 .. **Definition** -> The location of the certificate authority TLS certificate of the server in the test network.
 .. **Schema** -> Must be a UNIX absolute filepath.
+
 . _DEST_ADDRESS_
 .. **Definition** -> The network address of the server stage that the server should contact in the test network.
 .. **Schema** -> Must be either a IPv4 address or a FQDN.
+
 . _DEST_PORT_
 .. **Definition** -> The network port of the server stage that the server should contact in the test network.
 .. **Schema** -> Must be non-privileged port number.
+
 . _DATASTORE_ADDRESS_
 .. **Definition** -> The network address of the datastore that the server should contact in the test network.
 .. **Schema** -> Must be either a IPv4 address or a FQDN.
+
 . _DATASTORE_PORT_
 .. **Definition** -> The network port of the datastore that the server should contact in the test network.
 .. **Schema** -> Must be non-privileged port number.
+
+. _DATASTORE_FILEPATH_
+.. **Definition** -> The filesystem location where the datastore should save logs.
+.. **Schema** -> Must be a UNIX absolute filepath.
+
+. _DATASTORE_DEFAULT_FILEPATH_
+.. **Definition** -> The filesystem location where the datastore should save logs.
+.. **Schema** -> Must be a UNIX absolute filepath.
+
+. _DATASTORE_OPERATIONS_FILEPATH_
+.. **Definition** -> The filesystem location where the datastore operations that can't be sent should be saved.
+.. **Schema** -> Must be a UNIX absolute filepath.
+
 . _THROTTLE_INTERVAL_
 .. **Definition** -> The interval that the server should wait in seconds between receiving fibonacci numbers and sending fibonacci numbers.
 .. **Schema** -> Must be a number that can be turned into a Python integer.
+
 . _UPPER_BOUND_
 .. **Definition** -> The number that the server must stop sending new fibonacci numbers if the last number the server received is larger than.
 .. **Schema** -> Must be a number that can be turned into a Python integer.

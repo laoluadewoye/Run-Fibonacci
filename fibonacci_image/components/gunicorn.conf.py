@@ -1,6 +1,11 @@
 from multiprocessing import cpu_count
 from os import environ
 
+# Assert TLS materials exist
+assert 'SECRET_KEY_TARGET' in environ
+assert 'SECRET_CERT_TARGET' in environ
+assert 'SECRET_CA_CERT_TARGET' in environ
+
 # Defaults
 wsgi_app = f'{environ.get('SERVER_API')}:app'
 workers = cpu_count() * 2 + 1

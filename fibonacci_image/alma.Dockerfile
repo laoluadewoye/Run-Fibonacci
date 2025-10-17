@@ -22,10 +22,6 @@ RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
 # Create the app user
 RUN useradd --create-home --user-group app
 
-# Make the bash scripts executable
-RUN chmod +x send_next_fib.sh
-RUN chmod +x send_healthcheck.sh
-
 # Make the app user owner of that directory
 RUN chown --recursive app:app /usr/src/app/
 
@@ -33,7 +29,7 @@ RUN chown --recursive app:app /usr/src/app/
 USER app
 
 # Setup the healthcheck
-HEALTHCHECK --start-period=10s --interval=10s --timeout=5s --retries=3 CMD /usr/src/app/send_healthcheck.sh
+HEALTHCHECK --start-period=10s --interval=10s --timeout=5s --retries=3 CMD /usr/src/app/send_healthcheck.py
 
 # Run the server
 ENTRYPOINT ["gunicorn"]

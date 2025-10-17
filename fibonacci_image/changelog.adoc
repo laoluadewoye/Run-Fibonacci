@@ -3,9 +3,10 @@
 
 a|Version 2.0.0 (In Development)
 a| * Added new `datastore_utils.py` for handling log definitions, log output, and log saving. Updated `rest.py` to reflect changes.
-* Added new environmental variables `SERVER_DATASTORE`, `DATASTORE_ADDRESS`, and `DATASTORE_PORT`  to support multiple kinds of datastores.
+* Added new environmental variables `SERVER_DATASTORE`, `DATASTORE_ADDRESS`, `DATASTORE_PORT`, `DATASTORE_FILEPATH`, `DATASTORE_DEFAULT_FILEPATH`, and `DATASTORE_OPERATIONS_FILEPATH` to support multiple kinds of datastores.
 * Updated Dockerfiles to copy entire `components` folder rather than individual files, and to install Python libraries using a requirements file.
-* Added skeleton for new log saving API to `rest.py`.
+* Added new log saving API to `rest.py`.
+* Converted shell scripts for healthcheck and start API to Python programs. Adjusted `rest.py` accordingly.
 
 a|Version 1.2.0 (Available tags are `latest`, `1.2.0`, `1.2.0-alpine`, `1.2.0-alma`)
 a|* Added new environmental variable `SERVER_API` To support multiple kinds of APIs.

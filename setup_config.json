@@ -60,15 +60,17 @@
             "type": "none",
             "networkAddress": "172.19.0.11",
             "networkPort": 9000,
-            "elasticstack": {},
-            "file": {
-                "defaultFolder": "/tmp",
-                "format": "csv",
-                "fileFolder": "/usr/share/datastore",
-                "fileName": "datastore.csv"
-            },
-            "mongodb": {},
-            "postgresql": {}
+            "configs": {
+                "elasticstack": {},
+                "file": {
+                    "defaultFolder": "/tmp",
+                    "format": "csv",
+                    "fileFolder": "/usr/share/datastore",
+                    "fileName": "datastore.csv"
+                },
+                "mongodb": {},
+                "postgresql": {}
+            }
         }
     },
     "stage": {
