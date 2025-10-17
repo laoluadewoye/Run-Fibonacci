@@ -3,6 +3,7 @@
 :email: laoluadewoye@gmail.com>
 :description: Explains how the second Kubernetes use case works.
 :keywords: kubernetes, deployments, cluster, distributed, replica, container, pod, binding, port, network, interface, secret, mount, image, enviornment, variables, replica, server, stage, service, imgress, network, admission, policy
+:toc:
 
 == Versioning
 

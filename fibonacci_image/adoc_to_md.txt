@@ -1,0 +1,12 @@
+asciidoctor -b docbook README.adoc
+pandoc --toc -f docbook -t markdown_mmd -o README.md README.xml --wrap=none
+
+1. [Versioning](#versioning)
+   1. [Changelog](#changelog)
+2. [Required Software](#required-software)
+3. [Explanation of Image](#explanation-of-image)
+   1. [Files Used in Image](#files-used-in-image)
+   2. [Other Image Details](#other-image-details)
+4. [Other Files in Directory](#other-files-in-directory)
+5. [Software Bill of Materials](#software-bill-of-materials)
+6. [Configurable Server Environmental Arguments](#configurable-server-environmental-arguments)

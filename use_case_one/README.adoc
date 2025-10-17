@@ -3,6 +3,7 @@
 :email: laoluadewoye@gmail.com>
 :description: Explains how the Docker Compose use case works.
 :keywords: generation, python, networking, topology, bridge, star, ring, port, binding, enviornmental, env, variable, host, dns, mapping, ip, ipv4
+:toc:
 
 == Versioning
 

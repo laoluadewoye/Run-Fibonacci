@@ -3,6 +3,7 @@
 :email: laoluadewoye@gmail.com>
 :description: Explains how the first Kubernetes use case works.
 :keywords: fibonacci, use, case, pods, deployments, networking, yaml, server, namespace, security, network, ingress, service, kubernetes, deployment, admission, validating, policy, secret, load, balancing, firewall, helm, chart, release
+:toc:
 
 == Versioning
 

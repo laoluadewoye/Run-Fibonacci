@@ -3,6 +3,7 @@
 :email: laoluadewoye@gmail.com>
 :description: Specification on how fibonacci server can be designed and configured.
 :keywords: container, image, docker, podman, engine, build, specification, spec, fibonacci, alpine, pod, kubernetes, orchestration, flask, gunicorn, shell, dockerfile, healthcheck, Schema, argument, environment, variable, python, server, stage, network, address, ipv4, port, tls, certificate, key, ca, authority, throttle, limit, interval, max, upper, destination, forward, forwarding, rest, api, curl, http, https, alma
+:toc:
 
 == Versioning
 
@@ -15,7 +16,7 @@ include::latest_image.adoc[]
 
 include::changelog.adoc[]
 
-== Required software
+== Required Software
 
 . Docker or Podman
 . OpenSSL
