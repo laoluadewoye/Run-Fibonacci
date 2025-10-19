@@ -81,6 +81,12 @@ ca_key, ca_cert = create_key_cert(
     subject=ca_subject, san_names=ca_alt_names, san_ips=['127.0.0.1'], cert_days=2, public_exponent=65537, key_length=4096,
     is_ca=True, is_cert_signer=True
 )
+ca_key_string = ca_key.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.TraditionalOpenSSL,
+    encryption_algorithm=serialization.NoEncryption()
+).decode()
+ca_cert_string = ca_cert.public_bytes(serialization.Encoding.PEM).decode()
 
 # Generate external TLS materials
 num_combos = len(['rest']) * len(['alma', 'alpine']) * len(['none', 'file'])
@@ -99,32 +105,25 @@ external_key, external_cert = create_key_cert(
     subject=external_subject, san_names=external_alt_names, san_ips=external_alt_ips, cert_days=1, public_exponent=65537,
     key_length=4096, issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
 )
+external_key_string = external_key.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.TraditionalOpenSSL,
+    encryption_algorithm=serialization.NoEncryption()
+).decode()
+external_cert_string = external_cert.public_bytes(serialization.Encoding.PEM).decode()
 
-# Save TLS materials for external communication
+# Save TLS materials for encrypted communication
 with open(f'{BASE_FOLDER}/test_self.key', 'w') as external_key_file:
-    external_key_file.write(
-        external_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
-        ).decode()
-    )
+    external_key_file.write(external_key_string)
 
 with open(f'{BASE_FOLDER}/test_self.crt', 'w') as external_cert_file:
-    external_cert_file.write(
-        external_cert.public_bytes(serialization.Encoding.PEM).decode()
-    )
+    external_cert_file.write(external_cert_string)
+
+with open(f'{BASE_FOLDER}/test_self.pem', 'w') as external_pem_file:
+    external_pem_file.write(f'{external_cert_file}\n{external_key_file}')
 
 with open(f'{BASE_FOLDER}/test_ca.key', 'w') as ca_key_file:
-    ca_key_file.write(
-        ca_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
-        ).decode()
-    )
+    ca_key_file.write(ca_key_string)
 
 with open(f'{BASE_FOLDER}/test_ca.crt', 'w') as ca_cert_file:
-    ca_cert_file.write(
-        ca_cert.public_bytes(serialization.Encoding.PEM).decode()
-    )
+    ca_cert_file.write(ca_cert_string)

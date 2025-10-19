@@ -22,7 +22,7 @@
             "startAddress": 20
         },
         "startPort": 8080,
-        "healthcheckCMD": "/usr/src/app/send_healthcheck.sh",
+        "healthcheckCMD": "/usr/src/app/send_healthcheck.py",
         "containerRestartPolicy": "on-failure",
         "containerFailPolicy": "kill"
     },
@@ -37,6 +37,7 @@
         "outputFolder": "output",
         "certExt": "crt",
         "keyExt": "key",
+        "pemExt": "pem",
         "imageVersionFp": "fibonacci_image/latest_image.adoc",
         "composeOutput": "docker-compose.json"
     },
@@ -61,15 +62,24 @@
             "networkAddress": "172.19.0.11",
             "networkPort": 9000,
             "configs": {
-                "elasticstack": {},
-                "file": {
-                    "defaultFolder": "/tmp",
-                    "format": "csv",
-                    "fileFolder": "/usr/share/datastore",
-                    "fileName": "datastore.csv"
+                "elasticstack": {
+                    "logstashImage": "docker.io/library/logstash:8.17.10",
+                    "elasticsearchImage": "docker.io/library/elasticsearch:8.17.10",
+                    "kibanaImage": "docker.io/library/kibana:8.17.10"
                 },
-                "mongodb": {},
-                "postgresql": {}
+                "file": {
+                    "format": "csv",
+                    "logFolder": "/tmp",
+                    "datastoreName": "datastore",
+                    "defaultName": "default",
+                    "operationsName": "operations"
+                },
+                "mongodb": {
+                    "image": "docker.io/library/mongo:8.0.15-noble"
+                },
+                "postgresql": {
+                    "image": "docker.io/library/postgres:18.0-alpine3.22"
+                }
             }
         }
     },

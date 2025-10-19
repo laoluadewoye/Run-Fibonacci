@@ -1,8 +1,17 @@
 [cols="1,1"]
 |===
 
+a|Version 2.1.0 (In Development)
+a|* Added new environmental variables `SECRET_PEM_TARGET`, `DATASTORE_USER`, `DATASTORE_PASSWORD` to support datastore authentication and tls setup.
+* Added `pymongo` and `psycopg2` Python libraries to `requirements.txt`.
+* Changed constant `SERVER_CONFIG` to `SERVER_IDENTIFIER` and simplified `SERVER_IDENTIFIER` to take up less space when saved to datastores in `rest.py`.
+* Restructured log schema to create fields `time`, `server`, `type`, `kinds`, `details`, and `hash` as the information to work with for datastores in `datastore_utils.py`.
+* Added logic for creating PostgreSQL and MongoDB connections in `datastore_utils.py`.
+* Completed logic for contacting available datastores in `datastore_utils.py`.
+* Updated `TestVersion.py` and `TestGenTLS.py` to reflect updates to version.
+
 a|Version 2.0.0 (Available tags are `latest`, `2.0.0`, `2.0.0-alpine`, `2.0.0-alma`)
-a| * Added new `datastore_utils.py` for handling log definitions, log output, and log saving. Updated `rest.py` to reflect changes.
+a|* Added new `datastore_utils.py` for handling log definitions, log output, and log saving. Updated `rest.py` to reflect changes.
 * Added new environmental variables `SERVER_DATASTORE`, `DATASTORE_ADDRESS`, `DATASTORE_PORT`, `DATASTORE_FILEPATH`, `DATASTORE_DEFAULT_FILEPATH`, and `DATASTORE_OPERATIONS_FILEPATH` to support multiple kinds of datastores.
 * Updated Dockerfiles to copy entire `components` folder rather than individual files, and to install Python libraries using a requirements file.
 * Added new log saving API to `rest.py`.

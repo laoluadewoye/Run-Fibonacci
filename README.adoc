@@ -232,6 +232,10 @@ There are two files that will be used across the entire project. The first is `s
 .... **Definition** -> `fs` member key that specifies the file extension to use for exported PEM keys.
 .... **Schema** -> JSON string
 
+... _pemExt_
+.... **Definition** -> `fs` member key that specifies the file extension to use for exported PEM certificate-key combos.
+.... **Schema** -> JSON string
+
 ... _imageVersionFp_
 .... **Definition** -> `fs` member key that specifies the file that holds the fibonacci image version to use.
 .... **Schema** -> JSON string
@@ -320,17 +324,57 @@ There are two files that will be used across the entire project. The first is `s
 ........ **Definition** -> `configs` member key that specifies settings for ElasticStack datastore.
 ........ **Schema** -> JSON Object that contains the following keys:
 
+......... _logstashImage_
+.......... **Definition** -> `elasticstack` member key that specifies the image to use for a LogStash container.
+.......... **Schema** -> JSON string. Must be either a Docker Hub relative image or a full image name with the registry, namespace, and repository. Tag/hash is optional.
+
+......... _elasticsearchImage_
+.......... **Definition** -> `elasticstack` member key that specifies the image to use for a ElasticSearch container.
+.......... **Schema** -> JSON string. Must be either a Docker Hub relative image or a full image name with the registry, namespace, and repository. Tag/hash is optional.
+
+......... _kibanaImage_
+.......... **Definition** -> `elasticstack` member key that specifies the image to use for a Kibana container.
+.......... **Schema** -> JSON string. Must be either a Docker Hub relative image or a full image name with the registry, namespace, and repository. Tag/hash is optional.
+
 ....... _file_
 ........ **Definition** -> `configs` member key that specifies settings for remote file datastore.
 ........ **Schema** -> JSON Object that contains the following keys:
+
+......... _format_
+.......... **Definition** -> `file` member key that specifies the file format to use for saving logs.
+.......... **Schema** -> JSON string. Must be one of the following -> [csv].
+
+......... _logFolder_
+.......... **Definition** -> `file` member key that specifies the filesystem directory to use for saving logs.
+.......... **Schema** -> JSON string. Must be a UNIX-valid absolute filepath.
+
+......... _datastoreName_
+.......... **Definition** -> `file` member key that specifies the name of the file preferred for saving datastore logs.
+.......... **Schema** -> JSON string. Must be a UNIX-valid file name.
+
+......... _defaultName_
+.......... **Definition** -> `file` member key that specifies the name of the default file for saving datastore logs.
+.......... **Schema** -> JSON string. Must be a UNIX-valid file name.
+
+......... _operationsName_
+.......... **Definition** -> `file` member key that specifies the name of the file preferred for saving server operation logs.
+.......... **Schema** -> JSON string. Must be a UNIX-valid file name.
 
 ....... _mongodb_
 ........ **Definition** -> `configs` member key that specifies settings for MongoDB datastore.
 ........ **Schema** -> JSON Object that contains the following keys:
 
+......... _image_
+.......... **Definition** -> `mongodb` member key that specifies the image to use for a MongoDB container.
+.......... **Schema** -> JSON string. Must be either a Docker Hub relative image or a full image name with the registry, namespace, and repository. Tag/hash is optional.
+
 ....... _postgresql_
 ........ **Definition** -> `configs` member key that specifies settings for PostgreSQL datastore.
 ........ **Schema** -> JSON Object that contains the following keys:
+
+......... _image_
+.......... **Definition** -> `postgresql` member key that specifies the image to use for a PostgreSQL container.
+.......... **Schema** -> JSON string. Must be either a Docker Hub relative image or a full image name with the registry, namespace, and repository. Tag/hash is optional.
 
 ==== _stage_
 .. **Definition** -> Top-level key that specifies information related to the settings specific to the abstract server stage.

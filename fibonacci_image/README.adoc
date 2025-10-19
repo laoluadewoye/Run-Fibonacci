@@ -141,6 +141,10 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 .. **Definition** -> The location of the personal TLS certificate of the server in the test network.
 .. **Schema** -> Must be a UNIX absolute filepath.
 
+. _SECRET_PEM_TARGET_
+.. **Definition** -> The location of the personal TLS key-certificate combination of the server in the test network.
+.. **Schema** -> Must be a UNIX absolute filepath.
+
 . _SECRET_CA_CERT_TARGET_
 .. **Definition** -> The location of the certificate authority TLS certificate of the server in the test network.
 .. **Schema** -> Must be a UNIX absolute filepath.
@@ -168,6 +172,14 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 . _DATASTORE_DEFAULT_FILEPATH_
 .. **Definition** -> The filesystem location where the datastore should save logs.
 .. **Schema** -> Must be a UNIX absolute filepath.
+
+. _DATASTORE_USER_
+.. **Definition** -> The username of the account for accessing the datastore.
+.. **Schema** -> Must be a string with alphanumerical characters with no spaces. Optional.
+
+. _DATASTORE_PASSWORD_
+.. **Definition** -> The password of the account for accessing the datastore.
+.. **Schema** -> Must be a complex, decently long string with no spaces. Optional.
 
 . _DATASTORE_OPERATIONS_FILEPATH_
 .. **Definition** -> The filesystem location where the datastore operations that can't be sent should be saved.

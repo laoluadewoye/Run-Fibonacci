@@ -1,6 +1,14 @@
 [cols="1,1"]
 |===
 
+|Version 2.0.0
+a|* Changed `engine.network.startAddress` value from 10 to 20 in `setup_config.json`.
+* Changed `engine.healthcheckCMD` value from `/usr/src/app/send_healthcheck.sh` to `/usr/src/app/send_healthcheck.py` in `setup_config.json`.
+* Added `dns.datastoreName`, `fs.pemExt`, and `server` keys in `setup_config.json`.
+* Added table of contents sections to all READMEs.
+* Added whitespace separators between schema items in project README and image README.
+* Updated `GenerateTLS.py` to save files as part of `create_key_cert` function.
+
 |Version 1.0.1
 a|* Renamed the `setup_config.json` keys `platform` and `kube` to `engine` and `orchestrator` respectively.
 

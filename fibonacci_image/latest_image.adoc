@@ -1,1 +1,1 @@
-docker.io/laoluade/run-fibonacci:2.0.0
+docker.io/laoluade/run-fibonacci:2.1.0

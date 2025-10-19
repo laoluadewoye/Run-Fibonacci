@@ -11,7 +11,7 @@ COPY components/ .
 RUN apk update
 
 # Install Python and Pip
-RUN apk add python3 py3-pip curl
+RUN apk add python3 py3-pip
 
 # Install Pip requirements
 ENV VIRTUAL_ENV=/opt/venv
