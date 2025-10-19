@@ -11,9 +11,10 @@ from ipaddress import ip_address
 from pathlib import Path
 
 
-def create_key_cert(subject: x509.Name, san_names: list[str], san_ip: str, cert_days: int, public_exponent: int,
-                    key_length: int, issuer_key=None, issuer_cert=None, is_ca: bool = False,
-                    is_key_encrypter: bool = False, is_cert_signer: bool = False) -> tuple:
+def create_key_cert(subject: x509.Name, san_names: list[str], san_ips: list[str], cert_days: int, public_exponent: int,
+                    key_length: int, filename: str, key_ext: str, cert_ext: str, pem_ext: str, issuer_key=None,
+                    issuer_cert=None, is_ca: bool = False, ca_suffix: str = '', is_key_encrypter: bool = False,
+                    is_cert_signer: bool = False) -> tuple:
     # Create key
     key: RSAPrivateKey = rsa.generate_private_key(public_exponent=public_exponent, key_size=key_length)
 
@@ -33,9 +34,9 @@ def create_key_cert(subject: x509.Name, san_names: list[str], san_ip: str, cert_
     cert = cert.not_valid_after(datetime.now(timezone.utc) + timedelta(days=cert_days))
 
     # Add extensions
-    sans = [x509.DNSName(san_name) for san_name in san_names]
-    sans.append(x509.IPAddress(ip_address(san_ip)))
-    cert = cert.add_extension(x509.SubjectAlternativeName(sans), critical=False)
+    formatted_san_names = [x509.DNSName(san_name) for san_name in san_names]
+    formatted_san_names.extend([x509.IPAddress(ip_address(san_ip)) for san_ip in san_ips])
+    cert = cert.add_extension(x509.SubjectAlternativeName(formatted_san_names), critical=False)
     cert = cert.add_extension(x509.BasicConstraints(ca=is_ca, path_length=None), critical=True)
     cert = cert.add_extension(
         x509.KeyUsage(
@@ -60,12 +61,34 @@ def create_key_cert(subject: x509.Name, san_names: list[str], san_ip: str, cert_
             critical=False
         )
 
-    # Sign and return items
+    # Sign certificate
     if is_ca:
         cert = cert.sign(key, hashes.SHA512())
     else:
         cert = cert.sign(issuer_key, hashes.SHA512())
-    
+
+    # Save key and certificate as various documents
+    key_str = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()
+    ).decode()
+    cert_str = cert.public_bytes(serialization.Encoding.PEM).decode()
+
+    with open(f'{filename}.{key_ext}', 'w') as key_file:
+        key_file.write(key_str)
+
+    with open(f'{filename}.{cert_ext}', 'w') as cert_file:
+        cert_file.write(cert_str)
+
+    with open(f'{filename}.{pem_ext}', 'w') as pem_file:
+        pem_file.write(f'{cert_str}\n{key_str}')
+
+    if not is_ca:
+        issuer_cert_str = issuer_cert.public_bytes(serialization.Encoding.PEM).decode()
+        with open(f'{filename}-{ca_suffix}.{cert_ext}', 'w') as cert_combo_file:
+            cert_combo_file.write(f'{cert_str}\n{issuer_cert_str}')
+
     return key, cert
 
 
@@ -75,7 +98,7 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
     tls: dict = setup_config['tls']
     fs: dict = setup_config['fs']
     tls_folder: dict = setup_config['fs']['tlsFolder']
-    network: dict = setup_config['platform']['network']
+    network: dict = setup_config['engine']['network']
     stage: dict = setup_config['stage']
 
     # Create TLS folder
@@ -87,28 +110,34 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
     print('Creating CA TLS materials...')
     ca_cert_name: str = f'{dns['caName']}.{dns['domain']}'
     ca_alt_names: list[str] = [ca_cert_name, dns['domain'], dns['default']]
-    ca_ip_addr: str = f'{network['prefix']}.{network['startAddress']}'
+    ca_ips: list[str] = [f'{network['prefix']}.{network['startAddress']}']
     ca_subject: x509.Name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
         x509.NameAttribute(NameOID.COMMON_NAME, ca_cert_name),
     ])
     ca_key, ca_cert = create_key_cert(
-        subject=ca_subject, san_names=ca_alt_names, san_ip=ca_ip_addr, cert_days=tls['cert']['validDaysCA'],
-        public_exponent=tls['rsa']['publicExponent'], key_length=tls['rsa']['keyLength'], is_ca=True,
-        is_cert_signer=True
+        subject=ca_subject, san_names=ca_alt_names, san_ips=ca_ips, cert_days=tls['cert']['validDaysCA'],
+        public_exponent=tls['rsa']['publicExponent'], key_length=tls['rsa']['keyLength'],
+        filename=f'{project_folder}/{tls_folder}/{dns['caName']}', key_ext=fs['keyExt'], cert_ext=fs['certExt'],
+        pem_ext=fs['pemExt'], is_ca=True, is_cert_signer=True
     )
 
     # Generate ingress TLS materials
     print('Creating ingress TLS materials...')
-    ingress_alt_names: list[str] = [dns['domain'], dns['default'], f'v3.{dns['domain']}', f'v4.{dns['domain']}']
+    ingress_alt_names: list[str] = [
+        dns['domain'], dns['default'], f'v3.{dns['domain']}', f'v4.{dns['domain']}',
+        f'{dns['ingressName']}.{dns['domain']}'
+    ]
     ingress_subject: x509.Name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, 'US'),
         x509.NameAttribute(NameOID.COMMON_NAME, dns['domain']),
     ])
-    ingress_key, ingress_cert = create_key_cert(
-        subject=ingress_subject, san_names=ingress_alt_names, san_ip=dns['defaultIP'],
+    create_key_cert(
+        subject=ingress_subject, san_names=ingress_alt_names, san_ips=[dns['defaultIP']],
         cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
-        key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+        key_length=tls['rsa']['keyLength'], filename=f'{project_folder}/{tls_folder}/{dns['ingressName']}',
+        key_ext=fs['keyExt'], cert_ext=fs['certExt'],  pem_ext=fs['pemExt'], issuer_key=ca_key, issuer_cert=ca_cert,
+        ca_suffix=dns['caName'], is_key_encrypter=True
     )
 
     # Generate external TLS materials
@@ -119,81 +148,30 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
         x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
         x509.NameAttribute(NameOID.COMMON_NAME, external_cert_name),
     ])
-    external_key, external_cert = create_key_cert(
-        subject=external_subject, san_names=external_alt_names, san_ip=dns['defaultIP'],
+    create_key_cert(
+        subject=external_subject, san_names=external_alt_names, san_ips=[dns['defaultIP']],
         cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
-        key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+        key_length=tls['rsa']['keyLength'], filename=f'{project_folder}/{tls_folder}/{dns['externalName']}',
+        key_ext=fs['keyExt'], cert_ext=fs['certExt'], pem_ext=fs['pemExt'], issuer_key=ca_key, issuer_cert=ca_cert,
+        ca_suffix=dns['caName'], is_key_encrypter=True
     )
 
     # Generate datastore TLS materials
     print('Creating datastore TLS materials...')
     datastore_cert_name: str = f'{dns['datastoreName']}.{dns['domain']}'
     datastore_alt_names: list[str] = [datastore_cert_name, dns['domain'], dns['default']]
-    datastore_ip_addr: str = setup_config['server']['datastore']['networkAddress']
+    datastore_ip_addr: list[str] = [setup_config['server']['datastore']['networkAddress']]
     datastore_subject: x509.Name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
         x509.NameAttribute(NameOID.COMMON_NAME, datastore_cert_name),
     ])
-    datastore_key, datastore_cert = create_key_cert(
-        subject=datastore_subject, san_names=datastore_alt_names, san_ip=datastore_ip_addr,
+    create_key_cert(
+        subject=datastore_subject, san_names=datastore_alt_names, san_ips=datastore_ip_addr,
         cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
-        key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
+        key_length=tls['rsa']['keyLength'], filename=f'{project_folder}/{tls_folder}/{dns['datastoreName']}',
+        key_ext=fs['keyExt'], cert_ext=fs['certExt'], pem_ext=fs['pemExt'], issuer_key=ca_key, issuer_cert=ca_cert,
+        ca_suffix=dns['caName'], is_key_encrypter=True
     )
-
-    # Save TLS materials for CA, ingress, external, and datastore
-    print('Saving CA TLS materials...')
-    with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['keyExt']}', 'w') as ca_key_file:
-        ca_key_file.write(
-            ca_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ).decode()
-        )
-
-    with open(f'{project_folder}/{tls_folder}/{dns['caName']}.{fs['certExt']}', 'w') as ca_cert_file:
-        ca_cert_file.write(ca_cert.public_bytes(serialization.Encoding.PEM).decode())
-
-    print('Saving ingress TLS materials...')
-    with open(f'{project_folder}/{tls_folder}/{dns['ingressName']}.{fs['keyExt']}', 'w') as ingress_key_file:
-        ingress_key_file.write(
-            ingress_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ).decode()
-        )
-
-    with open(f'{project_folder}/{tls_folder}/{dns['ingressName']}.{fs['certExt']}', 'w') as ingress_cert_file:
-        ingress_combined_certs = (f'{ingress_cert.public_bytes(serialization.Encoding.PEM).decode()}'
-                                  f'{ca_cert.public_bytes(serialization.Encoding.PEM).decode()}')
-        ingress_cert_file.write(ingress_combined_certs)
-
-    print('Saving external TLS materials...')
-    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['keyExt']}', 'w') as external_key_file:
-        external_key_file.write(
-            external_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ).decode()
-        )
-
-    with open(f'{project_folder}/{tls_folder}/{dns['externalName']}.{fs['certExt']}', 'w') as external_cert_file:
-        external_cert_file.write(external_cert.public_bytes(serialization.Encoding.PEM).decode())
-
-    print('Saving datastore TLS materials...')
-    with open(f'{project_folder}/{tls_folder}/{dns['datastoreName']}.{fs['keyExt']}', 'w') as datastore_key_file:
-        datastore_key_file.write(
-            datastore_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
-            ).decode()
-        )
-
-    with open(f'{project_folder}/{tls_folder}/{dns['datastoreName']}.{fs['certExt']}', 'w') as datastore_cert_file:
-        datastore_cert_file.write(datastore_cert.public_bytes(serialization.Encoding.PEM).decode())
 
     # Generate server stage TLS materials
     for i in range(stage['count']):
@@ -203,7 +181,7 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
         # Create current server_stage information
         server_stage_cert_name: str = f'{stage['namePrefix']}-{server_stage_index}.{dns['domain']}'
         server_stage_service_name: str = f'{stage['namePrefix']}-{server_stage_index}-service'
-        server_stage_ip_addr: str = f'{network['prefix']}.{network['startAddress'] + server_stage_index}'
+        server_stage_ips: list[str] = [f'{network['prefix']}.{network['startAddress'] + server_stage_index}']
         server_stage_alt_names: list[str] = [
             server_stage_cert_name, server_stage_service_name, dns['domain'], dns['default']
         ]
@@ -211,24 +189,11 @@ def create_tls_materials(project_folder: Path, setup_config: dict) -> None:
             x509.NameAttribute(NameOID.COUNTRY_NAME, dns['countryInitials']),
             x509.NameAttribute(NameOID.COMMON_NAME, server_stage_cert_name),
         ])
-        server_stage_key, server_stage_cert = create_key_cert(
-            subject=server_stage_subject, san_names=server_stage_alt_names, san_ip=server_stage_ip_addr,
-            cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
-            key_length=tls['rsa']['keyLength'], issuer_key=ca_key, issuer_cert=ca_cert, is_key_encrypter=True
-        )
-
-        # Save server stage TLS information to file
-        print(f'Saving TLS materials for server stage {server_stage_index}...')
         server_stage_name_prefix: str = f'{stage['namePrefix']}-{server_stage_index}'
-
-        with open(f'{project_folder}/{tls_folder}/{server_stage_name_prefix}.{fs['keyExt']}', 'w') as server_stage_key_file:
-            server_stage_key_file.write(
-                server_stage_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.TraditionalOpenSSL,
-                    encryption_algorithm=serialization.NoEncryption()
-                ).decode()
-            )
-
-        with open(f'{project_folder}/{tls_folder}/{server_stage_name_prefix}.{fs['certExt']}', 'w') as server_stage_cert_file:
-            server_stage_cert_file.write(server_stage_cert.public_bytes(serialization.Encoding.PEM).decode())
+        create_key_cert(
+            subject=server_stage_subject, san_names=server_stage_alt_names, san_ips=server_stage_ips,
+            cert_days=tls['cert']['validDaysLeaf'], public_exponent=tls['rsa']['publicExponent'],
+            key_length=tls['rsa']['keyLength'], filename=f'{project_folder}/{tls_folder}/{server_stage_name_prefix}',
+            key_ext=fs['keyExt'], cert_ext=fs['certExt'], pem_ext=fs['pemExt'], issuer_key=ca_key, issuer_cert=ca_cert,
+            ca_suffix=dns['caName'], is_key_encrypter=True
+        )
