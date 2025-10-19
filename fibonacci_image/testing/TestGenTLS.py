@@ -28,8 +28,8 @@ platforms: list[str] = ['alma', 'alpine']
 datastores: list[str] = ['none', 'file', 'elasticstack', 'mongodb', 'postgresql']
 test_combos = product(apis, platforms, datastores)
 
-current_ip: IPv4Address = ip_address('172.20.0.1')
-external_alt_ips: list[str] = ['127.0.0.1']
+current_ip: IPv4Address = ip_address('172.20.0.2')
+external_alt_ips: list[str] = ['127.0.0.1', '172.20.0.1']
 
 for api, platform, datastore in test_combos:
     # Limit to how high the last byte can be

@@ -1,6 +1,6 @@
 from pathlib import Path
 from yaml import load as yaml_load, Loader as yaml_loader, dump as yaml_dump
-from toml import load as toml_load, dump as toml_dump
+from toml import load as toml_load, dumps as toml_dumps
 from os.path import exists
 from subprocess import run, CompletedProcess
 from itertools import product
@@ -14,6 +14,14 @@ def create_server(base_folder: Path, server_network: str, server_ip: str, server
                   server_platform: str, server_api: str, container_name: str, server_datastore: str = 'none',
                   server_datastore_addr: str = 'N/A', server_datastore_port: int = -1,
                   server_datastore_user: str = 'N/A', server_datastore_pass: str = 'N/A') -> None:
+    # Check if test server already exist and delete if needed
+    server_output: CompletedProcess = run(
+        [command, 'ps', '-a', '--filter', f'name={container_name}'], capture_output=True, text=True
+    )
+    if server_output.stdout.split('\n')[1] != '':
+        run([command, 'stop', container_name])
+        run([command, 'rm', container_name])
+
     run([
         command, 'run', '-d', '-p', f'{server_port}:{server_port}',
         f'--network={server_network}', f'--ip={server_ip}',
@@ -65,53 +73,43 @@ def create_mongodb(base_folder: Path, server_network: str, server_info: zip, con
     mongodb_port: int = -1
 
     for server_component, server_ip, server_port in server_info:
+        print(f'\nComponent: {server_component}')
+        print(f'IP Address: {server_ip}')
+        print(f'Port: {server_port}')
+
+        # Check if test datastore already exist and delete if needed
+        component_output: CompletedProcess = run(
+            [command, 'ps', '-a', '--filter', f'name={container_name}-{server_component}'], capture_output=True,
+            text=True
+        )
+        if component_output.stdout.split('\n')[1] != '':
+            run([command, 'stop', f'{container_name}-{server_component}'])
+            run([command, 'rm', f'{container_name}-{server_component}'])
+
+        # Start components
         if server_component == 'mongodb':
-            # Store ip address and port for later
             mongodb_ip = server_ip
             mongodb_port = server_port
 
-            # Ingest mongodb configuration
-            with open(f'{base_folder}/mongo_datastore.conf') as conf_file:
-                mongo_config: dict = yaml_load(conf_file, yaml_loader)
-
-            # Customize socket
-            mongo_config['net']['port'] = server_port
-            mongo_config['net']['bindIp'] = server_ip
-
-            # Save configuration
-            with open(f'{base_folder}/mongo_datastore_custom.conf', 'w') as custom_conf_file:
-                custom_conf_file.write(yaml_dump(mongo_config))
-
-            # Run mongodb server
             run([
-                command, 'run', '-d', '-p', f'{server_port}:{server_port}',
+                command, 'run', '-d', '-p', f'{server_port}:27017',
                 f'--network={server_network}', f'--ip={server_ip}',
-                '-v', f'{base_folder}/test_self.pem:/run/secrets/self.pem',
-                '-v', f'{base_folder}/test_ca.crt:/run/secrets/ca.crt',
-                '-v', f'{base_folder}/mongo_datastore_custom.conf:/etc/mongo/mongod.conf',
                 '-e', f'MONGO_INITDB_ROOT_USERNAME={server_datastore_user}',
                 '-e', f'MONGO_INITDB_ROOT_PASSWORD={server_datastore_pass}',
                 '--name', f'{container_name}-{server_component}',
                 'docker.io/library/mongo:8.0.15-noble',
-                '--config', '/etc/mongo/mongod.conf'
             ])
         elif server_component == 'mongo-express':
-            # Run mongo-express interface
             run([
                 command, 'run', '-d', '-p', f'{server_port}:{server_port}',
                 f'--network={server_network}', f'--ip={server_ip}',
-                '-v', f'{base_folder}/test_self.key:/run/secrets/self.key',
-                '-v', f'{base_folder}/test_self.crt:/run/secrets/self.crt',
                 '-e', f'PORT={server_port}',
                 '-e', f'ME_CONFIG_BASICAUTH_USERNAME={server_datastore_user}',
                 '-e', f'ME_CONFIG_BASICAUTH_PASSWORD={server_datastore_pass}',
                 '-e', f'ME_CONFIG_MONGODB_ADMINUSERNAME={server_datastore_user}',
                 '-e', f'ME_CONFIG_MONGODB_ADMINPASSWORD={server_datastore_pass}',
-                '-e', f'ME_CONFIG_MONGODB_PORT={mongodb_port}',
+                '-e', f'ME_CONFIG_MONGODB_PORT=27017',
                 '-e', f'ME_CONFIG_MONGODB_SERVER={mongodb_ip}',
-                '-e', 'ME_CONFIG_SITE_SSL_ENABLED=true',
-                '-e', 'ME_CONFIG_SITE_SSL_CRT_PATH=/run/secrets/self.crt',
-                '-e', 'ME_CONFIG_SITE_SSL_KEY_PATH=/run/secrets/self.key',
                 '--name', f'{container_name}-{server_component}',
                 'docker.io/library/mongo-express:1.0.2-20-alpine3.19'
             ])
@@ -120,44 +118,38 @@ def create_mongodb(base_folder: Path, server_network: str, server_info: zip, con
 def create_postgresql(base_folder: Path, server_network: str, server_info: zip, container_name: str,
                    server_datastore_user: str, server_datastore_pass: str) -> None:
     for server_component, server_ip, server_port in server_info:
+        print(f'\nComponent: {server_component}')
+        print(f'IP Address: {server_ip}')
+        print(f'Port: {server_port}')
+
+        # Check if test datastore already exist and delete if needed
+        component_output: CompletedProcess = run(
+            [command, 'ps', '-a', '--filter', f'name={container_name}-{server_component}'], capture_output=True,
+            text=True
+        )
+        if component_output.stdout.split('\n')[1] != '':
+            run([command, 'stop', f'{container_name}-{server_component}'])
+            run([command, 'rm', f'{container_name}-{server_component}'])
+
+        # Start components
         if server_component == 'postgres':
-            # Ingest postgresql configuration
-            with open(f'{base_folder}/postgres_datastore.conf') as conf_file:
-                postgres_config: dict = toml_load(conf_file)
-
-            # Customize socket
-            postgres_config['port'] = server_port
-            postgres_config['listen_addresses'] = server_ip
-
-            # Save configuration
-            with open(f'{base_folder}/postgres_datastore_custom.conf', 'w') as custom_conf_file:
-                toml_dump(postgres_config, custom_conf_file)
-
             run([
                 command, 'run', '-d', '-p', f'{server_port}:{server_port}',
                 f'--network={server_network}', f'--ip={server_ip}',
-                '-v', f'{base_folder}/test_self.key:/run/secrets/self.key',
-                '-v', f'{base_folder}/test_self.crt:/run/secrets/self.crt',
-                '-v', f'{base_folder}/test_ca.crt:/run/secrets/ca.crt',
-                '-v', f'{base_folder}/postgres_datastore_custom.conf:/etc/postgresql/postgresql.conf',
+                '-e', f'PGPORT={server_port}',
                 '-e', f'POSTGRES_USER={server_datastore_user}',
                 '-e', f'POSTGRES_PASSWORD={server_datastore_pass}',
                 '--name', f'{container_name}-{server_component}',
                 'docker.io/library/postgres:18.0-alpine3.22',
-                '-c', 'config_file=/etc/postgresql/postgresql.conf'
             ])
         elif server_component == 'pgadmin':
-            # Run pgadmin interface
             run([
                 command, 'run', '-d', '-p', f'{server_port}:{server_port}',
                 f'--network={server_network}', f'--ip={server_ip}',
-                '-v', f'{base_folder}/test_self.key:/certs/server.key',
-                '-v', f'{base_folder}/test_self-ca.crt:/certs/server.cert',
                 '-e', f'PGADMIN_DEFAULT_EMAIL={server_datastore_user}@test.com',
                 '-e', f'PGADMIN_DEFAULT_PASSWORD={server_datastore_pass}',
-                '-e', f'PGADMIN_LISTEN_ADDRESS={server_ip}',
+                '-e', f'PGADMIN_LISTEN_ADDRESS=0.0.0.0',
                 '-e', f'PGADMIN_LISTEN_PORT={server_port}',
-                '-e', f'PGADMIN_ENABLE_TLS=true',
                 '--name', f'{container_name}-{server_component}',
                 'docker.io/elestio/pgadmin:REL-9_8'
             ])
@@ -216,6 +208,8 @@ current_ip += 2
 # Create datastore credentials
 datastore_user: str = 'test-fib-user'
 datastore_password: str = uuid4().hex
+with open(f'{BASE_FOLDER}/test_credentials.txt', 'w') as cred_file:
+    cred_file.writelines([f'{datastore_user}@test.com\n', f'{datastore_user}\n', f'{datastore_password}\n'])
 
 # Run the test containers
 for api in apis:
@@ -232,14 +226,6 @@ for api in apis:
         print(f'Port: {current_port}')
         datastore_name: str = f'test-fib-{api}-{datastore}-datastore'
 
-        # Check if test datastore already exist and delete if needed
-        output: CompletedProcess = run(
-            [command, 'ps' , '-a' , '--filter', f'name={datastore_name}'], capture_output=True, text=True
-        )
-        if output.stdout.split('\n')[1] != '':
-            run([command, 'stop', datastore_name])
-            run([command, 'rm', datastore_name])
-
         if datastore == 'file': # Create flask datastore
             create_server(
                 BASE_FOLDER, test_fib_net_name, str(current_ip), current_port, latest_image, datastore_platform, api,
@@ -252,11 +238,11 @@ for api in apis:
             ds_names: list[str] = ['logstash', 'elasticsearch', 'kibana']
             ds_ips: list[str] = [str(current_ip + i) for i in range(3)]
             ds_ports: list[int] = [current_port + i for i in range(3)]
-            ds_info = zip(ds_names, ds_ips, ds_ports)
             create_elasticstack(
-                BASE_FOLDER, test_fib_net_name, ds_info, datastore_name, datastore_user, datastore_password
+                BASE_FOLDER, test_fib_net_name, zip(ds_names, ds_ips, ds_ports), datastore_name, datastore_user,
+                datastore_password
             )
-            for ds_name, ds_ip, ds_port in ds_info:
+            for ds_name, ds_ip, ds_port in zip(ds_names, ds_ips, ds_ports):
                 test_fib_net[f'{datastore_name}-{ds_name}'] = {'ip': ds_ip, 'port': ds_port}
                 current_ip += 1
                 current_port += 1
@@ -264,23 +250,23 @@ for api in apis:
             ds_names: list[str] = ['mongodb', 'mongo-express']
             ds_ips: list[str] = [str(current_ip + i) for i in range(2)]
             ds_ports: list[int] = [current_port + i for i in range(2)]
-            ds_info = zip(ds_names, ds_ips, ds_ports)
             create_mongodb(
-                BASE_FOLDER, test_fib_net_name, ds_info, datastore_name, datastore_user, datastore_password
+                BASE_FOLDER, test_fib_net_name, zip(ds_names, ds_ips, ds_ports), datastore_name, datastore_user,
+                datastore_password
             )
-            for ds_name, ds_ip, ds_port in ds_info:
+            for ds_name, ds_ip, ds_port in zip(ds_names, ds_ips, ds_ports):
                 test_fib_net[f'{datastore_name}-{ds_name}'] = {'ip': ds_ip, 'port': ds_port}
                 current_ip += 1
                 current_port += 1
-        elif datastore == 'postgres': # Create PostgreSQL datastore
+        elif datastore == 'postgresql': # Create PostgreSQL datastore
             ds_names: list[str] = ['postgres', 'pgadmin']
             ds_ips: list[str] = [str(current_ip + i) for i in range(2)]
             ds_ports: list[int] = [current_port + i for i in range(2)]
-            ds_info = zip(ds_names, ds_ips, ds_ports)
             create_postgresql(
-                BASE_FOLDER, test_fib_net_name, ds_info, datastore_name, datastore_user, datastore_password
+                BASE_FOLDER, test_fib_net_name, zip(ds_names, ds_ips, ds_ports), datastore_name, datastore_user,
+                datastore_password
             )
-            for ds_name, ds_ip, ds_port in ds_info:
+            for ds_name, ds_ip, ds_port in zip(ds_names, ds_ips, ds_ports):
                 test_fib_net[f'{datastore_name}-{ds_name}'] = {'ip': ds_ip, 'port': ds_port}
                 current_ip += 1
                 current_port += 1
@@ -296,12 +282,6 @@ for api in apis:
         print(f'IP Address: {current_ip}')
         print(f'Port: {current_port}')
         server_name: str = f'test-fib-{api}-{datastore}-{platform}-server'
-
-        # Check if test server already exist and delete if needed
-        output = run([command, 'ps', '-a', '--filter', f'name={server_name}'], capture_output=True, text=True)
-        if output.stdout.split('\n')[1] != '':
-            run([command, 'stop', server_name])
-            run([command, 'rm', server_name])
 
         # Create test server
         if datastore == 'file':
