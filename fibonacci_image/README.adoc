@@ -173,6 +173,10 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 .. **Definition** -> The filesystem location where the datastore should save logs.
 .. **Schema** -> Must be a UNIX absolute filepath.
 
+. _DATASTORE_OPERATIONS_FILEPATH_
+.. **Definition** -> The filesystem location where the datastore operations that can't be sent should be saved.
+.. **Schema** -> Must be a UNIX absolute filepath.
+
 . _DATASTORE_USER_
 .. **Definition** -> The username of the account for accessing the datastore.
 .. **Schema** -> Must be a string with alphanumerical characters with no spaces. Optional.
@@ -180,10 +184,6 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 . _DATASTORE_PASSWORD_
 .. **Definition** -> The password of the account for accessing the datastore.
 .. **Schema** -> Must be a complex, decently long string with no spaces. Optional.
-
-. _DATASTORE_OPERATIONS_FILEPATH_
-.. **Definition** -> The filesystem location where the datastore operations that can't be sent should be saved.
-.. **Schema** -> Must be a UNIX absolute filepath.
 
 . _THROTTLE_INTERVAL_
 .. **Definition** -> The interval that the server should wait in seconds between receiving fibonacci numbers and sending fibonacci numbers.

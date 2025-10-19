@@ -2,6 +2,8 @@ from cryptography import x509
 from cryptography.x509.oid import NameOID
 from pathlib import Path
 from GenerateTLS import create_key_cert
+from itertools import product
+from ipaddress import ip_address, IPv4Address
 
 # Get base folder
 BASE_FOLDER = Path(__file__).resolve().parent
@@ -21,10 +23,32 @@ ca_key, ca_cert = create_key_cert(
 )
 
 # Generate external TLS materials
-num_combos = len(['rest']) * len(['alma', 'alpine']) * len(['none', 'file'])
+apis: list[str] = ['rest']
+platforms: list[str] = ['alma', 'alpine']
+datastores: list[str] = ['none', 'file', 'elasticstack', 'mongodb', 'postgresql']
+test_combos = product(apis, platforms, datastores)
+
+current_ip: IPv4Address = ip_address('172.20.0.1')
 external_alt_ips: list[str] = ['127.0.0.1']
-for i in range(num_combos):
-    external_alt_ips.append(f'172.20.0.{i+1}')
+
+for api, platform, datastore in test_combos:
+    # Limit to how high the last byte can be
+    if int(str(current_ip).split('.')[-1]) >= 224:
+        current_ip += ip_address(f'172.20.{int(str(current_ip).split('.')[-2]) + 1}.1')
+
+    # Add addresses
+    if datastore == 'elasticstack':
+        external_alt_ips.extend([str(current_ip + i) for i in range(3)])
+        current_ip += 3
+    elif datastore == 'mongodb':
+        external_alt_ips.extend([str(current_ip + i) for i in range(2)])
+        current_ip += 2
+    elif datastore == 'postgresql':
+        external_alt_ips.extend([str(current_ip + i) for i in range(2)])
+        current_ip += 2
+    else:
+        external_alt_ips.append(str(current_ip))
+        current_ip += 1
 
 print('Creating external TLS materials...')
 external_cert_name: str = 'external.test.com'

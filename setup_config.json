@@ -75,10 +75,12 @@
                     "operationsName": "operations"
                 },
                 "mongodb": {
-                    "image": "docker.io/library/mongo:8.0.15-noble"
+                    "mongoImage": "docker.io/library/mongo:8.0.15-noble",
+                    "mongoExpressImage": "docker.io/library/mongo-express:1.0.2-20-alpine3.19"
                 },
                 "postgresql": {
-                    "image": "docker.io/library/postgres:18.0-alpine3.22"
+                    "postgresImage": "docker.io/library/postgres:18.0-alpine3.22",
+                    "pgadminImage": "docker.io/elestio/pgadmin:REL-9_8"
                 }
             }
         }

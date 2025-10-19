@@ -1,4 +1,4 @@
 *.crt
 *.key
 *.pem
-*custom.conf
+*custom*
