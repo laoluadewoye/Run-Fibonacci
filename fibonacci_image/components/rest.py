@@ -7,7 +7,7 @@ from os import environ, getpid
 from datastore_utils import APIType, DatastoreType, LogType, LogKind, report_log, save_log
 
 # Create a server identifier
-SERVER_IDENTIFIER = {
+SERVER_IDENTIFIER: dict = {
     'PYTHON_INFO': version,
     'WORKER_ID': getpid(),
     'SERVER_API': environ.get('SERVER_API', 'N/A'),
@@ -95,7 +95,12 @@ app = Flask(__name__)
 
 
 # Define a sending thread
-def trigger_send(new_fib_one, new_fib_two, snf_log_id):
+def trigger_send(new_fib_one: int, new_fib_two: int, snf_log_id: str) -> None:
+    global DEST_ADDRESS
+    global DEST_PORT
+    global SECRET_CERT_TARGET
+    global SECRET_KEY_TARGET
+    global SECRET_CA_CERT_TARGET
     global SERVER_IDENTIFIER
 
     response: Response = requests_request(
@@ -105,20 +110,23 @@ def trigger_send(new_fib_one, new_fib_two, snf_log_id):
         cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
         verify=SECRET_CA_CERT_TARGET
     )
-    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_IDENTIFIER,
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_IDENTIFIER,
                f'Return code for message ID {snf_log_id}: {response.status_code}')
-    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_IDENTIFIER,
+    report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_IDENTIFIER,
                f'Return info for message ID {snf_log_id}: {response.json()}')
 
 
 # Create route processing logic
 @app.route('/', methods=['POST'])
-def process_fib_numbers():
+def process_fib_numbers() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
+    global THROTTLE_INTERVAL
+    global SERVER_STAGE_INDEX
     global SNF_LOG_ID
+    global UPPER_BOUND
 
     # Get numbers
-    fib_numbers = flask_request.get_json(force=True, silent=True)
+    fib_numbers: dict = flask_request.get_json(force=True, silent=True)
     if fib_numbers is None:
         msg: str = f'POST request failed. Unable to retrieve numbers.'
         report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.MAIN], SERVER_IDENTIFIER, msg)
@@ -151,26 +159,22 @@ def process_fib_numbers():
 
     # Decide on a response to send back
     if new_fib_one < UPPER_BOUND:  # Run the bash script to forward the next server in line
-        trigger_send_thread: Thread = Thread(
-            target=trigger_send, args=(new_fib_one, new_fib_two, SNF_LOG_ID,)
-        )
+        trigger_send_thread: Thread = Thread(target=trigger_send, args=(new_fib_one, new_fib_two, SNF_LOG_ID,))
         trigger_send_thread.start()
-        msg: str = f'POST request succeeded. Sent off fibonacci numbers.'
+        msg: str = 'POST request succeeded. Sent off fibonacci numbers.'
         return_code: int = 202
     else:  # Return that the upper bound has been reached
-        report_log(LogType.SEND, [LogKind.ONCALL, LogKind.MAIN], SERVER_IDENTIFIER,
-                   'Reached upper bound. Stopping sending.')
-
         msg: str = f'POST request succeeded. Reached upper bound.'
         return_code: int = 200
 
     # Send the response back
+    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.MAIN], SERVER_IDENTIFIER, msg)
     return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), return_code
 
 
 # Create healthcheck logic
 @app.route('/healthcheck', methods=['GET'])
-def get_healthcheck():
+def get_healthcheck() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
     global SNF_LOG_ID
     global LAST_SNF_LOG_ID
@@ -194,9 +198,10 @@ def get_healthcheck():
 
 # Create starting logic
 @app.route('/start', methods=['GET'])
-def start_fib():
+def start_fib() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
     global SNF_LOG_ID
+    global SERVER_STAGE_INDEX
 
     report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.START], SERVER_IDENTIFIER, 'GET start request received.')
 
@@ -204,9 +209,7 @@ def start_fib():
     SNF_LOG_ID = f'{SERVER_STAGE_INDEX}-0-0'
 
     # Run the bash script to start the sequence at 0 0
-    trigger_send_thread: Thread = Thread(
-        target=trigger_send, args=(0, 0, SNF_LOG_ID,)
-    )
+    trigger_send_thread: Thread = Thread(target=trigger_send, args=(0, 0, SNF_LOG_ID,))
     trigger_send_thread.start()
 
     # Send the response back
@@ -218,13 +221,13 @@ def start_fib():
 
 # Create datastore logic
 @app.route('/datastore', methods=['POST'])
-def process_log():
+def process_log() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
     global SNF_LOG_ID
     global DATASTORE_FILEPATH
 
     # Get log
-    cur_log = flask_request.get_json(force=True, silent=True)
+    cur_log: dict = flask_request.get_json(force=True, silent=True)
     if cur_log is None:
         msg: str = f'POST datastore request failed. Unable to retrieve log.'
         report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_IDENTIFIER, msg)
@@ -233,14 +236,17 @@ def process_log():
     # Save log to file
     success, op_success = save_log(DATASTORE_FILEPATH, cur_log, SERVER_IDENTIFIER)
     if success and op_success:
+        status: str = 'Success'
         msg: str = f'POST datastore request succeeded. Saved log.'
-        report_log(LogType.SEND, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_IDENTIFIER, msg)
-        return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), 200
-    if success and not op_success:
+        return_code: int = 200
+    elif success and not op_success:
+        status: str = 'Success'
         msg: str = f'POST datastore request succeeded. Saved log. Subsequent operation log saving failed.'
-        report_log(LogType.SEND, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_IDENTIFIER, msg)
-        return jsonify({'status': 'Success', 'message': msg, 'result': SNF_LOG_ID}), 200
+        return_code: int = 200
     else:
+        status: str = 'Fail'
         msg: str = f'POST datastore request failed. Saving log to file failed.'
-        report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_IDENTIFIER, msg)
-        return jsonify({'status': 'Fail', 'message': msg, 'result': SNF_LOG_ID}), 500
+        return_code: int = 500
+
+    report_log(LogType.SEND, [LogKind.ONCALL, LogKind.DATASTORE], SERVER_IDENTIFIER, msg)
+    return jsonify({'status': status, 'message': msg, 'result': SNF_LOG_ID}), return_code

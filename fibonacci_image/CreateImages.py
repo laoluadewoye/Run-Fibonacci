@@ -26,5 +26,5 @@ for platform in platforms:
     build_push_image(f'{platform}.Dockerfile', f'{latest_image}-{platform}', BASE_FOLDER, push_image)
 
 # Create defaults
-build_push_image('alpine.Dockerfile', f'{latest_image.split(':')[0]}:latest', BASE_FOLDER, push_image)
 build_push_image('alpine.Dockerfile', latest_image, BASE_FOLDER, push_image)
+build_push_image('alpine.Dockerfile', f'{latest_image.split(':')[0]}:latest', BASE_FOLDER, push_image)

@@ -92,12 +92,12 @@ def create_mongodb(base_folder: Path, server_network: str, server_info: zip, con
             mongodb_port = server_port
 
             run([
-                command, 'run', '-d', '-p', f'{server_port}:27017',
+                command, 'run', '-d', '-p', f'{server_port}:{server_port}',
                 f'--network={server_network}', f'--ip={server_ip}',
                 '-e', f'MONGO_INITDB_ROOT_USERNAME={server_datastore_user}',
                 '-e', f'MONGO_INITDB_ROOT_PASSWORD={server_datastore_pass}',
                 '--name', f'{container_name}-{server_component}',
-                'docker.io/library/mongo:8.0.15-noble',
+                'docker.io/library/mongo:8.0.15-noble', '--port', f'{server_port}'
             ])
         elif server_component == 'mongo-express':
             run([
@@ -108,7 +108,7 @@ def create_mongodb(base_folder: Path, server_network: str, server_info: zip, con
                 '-e', f'ME_CONFIG_BASICAUTH_PASSWORD={server_datastore_pass}',
                 '-e', f'ME_CONFIG_MONGODB_ADMINUSERNAME={server_datastore_user}',
                 '-e', f'ME_CONFIG_MONGODB_ADMINPASSWORD={server_datastore_pass}',
-                '-e', f'ME_CONFIG_MONGODB_PORT=27017',
+                '-e', f'ME_CONFIG_MONGODB_PORT={mongodb_port}',
                 '-e', f'ME_CONFIG_MONGODB_SERVER={mongodb_ip}',
                 '--name', f'{container_name}-{server_component}',
                 'docker.io/library/mongo-express:1.0.2-20-alpine3.19'
@@ -136,6 +136,7 @@ def create_postgresql(base_folder: Path, server_network: str, server_info: zip, 
             run([
                 command, 'run', '-d', '-p', f'{server_port}:{server_port}',
                 f'--network={server_network}', f'--ip={server_ip}',
+                '-v', f'{base_folder}/postgres_init.sql:/docker-entrypoint-initdb.d/init.sql',
                 '-e', f'PGPORT={server_port}',
                 '-e', f'POSTGRES_USER={server_datastore_user}',
                 '-e', f'POSTGRES_PASSWORD={server_datastore_pass}',
@@ -192,7 +193,8 @@ assert command != '', 'No container engine is running. Please start a container 
 # Set up combinations
 apis: list[str] = ['rest']
 platforms: list[str] = ['alma', 'alpine']
-datastores: list[str] = ['none', 'file', 'mongodb', 'postgresql']
+# datastores: list[str] = ['none', 'file', 'mongodb', 'postgresql']
+datastores: list[str] = ['postgresql']
 test_combos = product(platforms, datastores)
 
 # Start port settings
@@ -202,7 +204,9 @@ current_port: int = 8080
 # Create test network
 test_fib_net: dict = {}
 test_fib_net_name: str = 'test-fib-net'
-run([command, 'network', 'create', '--subnet', f'{current_ip}/16', test_fib_net_name])
+network_output = run([command, 'network', 'ls'], capture_output=True, text=True)
+if test_fib_net_name not in network_output.stdout:
+    run([command, 'network', 'create', '--subnet', f'{current_ip}/16', test_fib_net_name])
 current_ip += 2
 
 # Create datastore credentials
@@ -210,6 +214,10 @@ datastore_user: str = 'test-fib-user'
 datastore_password: str = uuid4().hex
 with open(f'{BASE_FOLDER}/test_credentials.txt', 'w') as cred_file:
     cred_file.writelines([f'{datastore_user}@test.com\n', f'{datastore_user}\n', f'{datastore_password}\n'])
+
+# Set up other details
+datastore_start_wait_time: int = 10
+server_ping_wait_time: int = 5
 
 # Run the test containers
 for api in apis:
@@ -222,11 +230,11 @@ for api in apis:
         print(f'Platform: {datastore_platform.title()} (Only used for file datastore)')
         print(f'API: {api.upper()}')
         print(f'Datastore: {datastore.title()}')
-        print(f'IP Address: {current_ip}')
-        print(f'Port: {current_port}')
         datastore_name: str = f'test-fib-{api}-{datastore}-datastore'
 
         if datastore == 'file': # Create flask datastore
+            print(f'IP Address: {current_ip}')
+            print(f'Port: {current_port}')
             create_server(
                 BASE_FOLDER, test_fib_net_name, str(current_ip), current_port, latest_image, datastore_platform, api,
                 datastore_name
@@ -271,6 +279,12 @@ for api in apis:
                 current_ip += 1
                 current_port += 1
 
+    # Wait for datastores to spin up
+    print('------------------------------------------------------------------')
+    for i in range(datastore_start_wait_time, 0, -1):
+        print(f'Waiting {i} seconds for datastores to spin up...')
+        sleep(1)
+
     # Run combinations
     for platform, datastore in test_combos:
         # Create test server
@@ -293,7 +307,7 @@ for api in apis:
         elif datastore == 'mongodb':
             datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore-mongodb']['ip']
             datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore-mongodb']['port']
-        elif datastore == 'postgres':
+        elif datastore == 'postgresql':
             datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore-postgres']['ip']
             datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore-postgres']['port']
         else:
@@ -306,7 +320,7 @@ for api in apis:
         )
 
         # Wait for test server to spin up
-        for i in range(5, 0, -1):
+        for i in range(server_ping_wait_time, 0, -1):
             print(f'Waiting {i} seconds for container to spin up...')
             sleep(1)
 

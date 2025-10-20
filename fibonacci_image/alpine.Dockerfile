@@ -1,5 +1,28 @@
 # Use specific Alpine Linux base image
-FROM docker.io/library/alpine:3.22
+FROM docker.io/library/alpine:3.22 AS build
+
+# Install Python, Pip and base for PostgreSQL
+RUN apk add --no-cache postgresql-dev gcc python3-dev musl-dev
+
+# Copy requirements into working directory
+COPY components/requirements.txt .
+
+# Set virtual enviornment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install pip requirements
+RUN pip install --no-cache-dir -r ./requirements.txt
+
+# Use specific Alpine Linux base image
+FROM docker.io/library/alpine:3.22 AS final
+
+# Ensure packages are updated and upgraded
+RUN apk update && apk upgrade
+
+# Install Python, Pip, and PostgreSQL library
+RUN apk add --no-cache python3 py3-pip libpq
 
 # Set working directory to a custom app one
 WORKDIR /usr/src/app/
@@ -7,17 +30,13 @@ WORKDIR /usr/src/app/
 # Copy components into working directory
 COPY components/ .
 
-# Ensure packages are updated
-RUN apk update
-
-# Install Python and Pip
-RUN apk add python3 py3-pip
-
-# Install Pip requirements
+# Set virtual enviornment
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
+
+# Copy python virtual enviornment
+COPY --from=build /opt/venv/ /opt/venv/
 
 # Create the app user
 RUN adduser -D app

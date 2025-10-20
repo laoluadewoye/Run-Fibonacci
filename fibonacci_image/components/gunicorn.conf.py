@@ -1,4 +1,3 @@
-from multiprocessing import cpu_count
 from os import environ
 
 # Assert variables exist
@@ -14,7 +13,6 @@ assert 'SECRET_CA_CERT_TARGET' in environ
 wsgi_app = f'{environ.get('SERVER_API')}:app'
 
 # Workers
-# workers = cpu_count() * 2 + 1
 workers = int(environ.get('SERVER_STAGE_COUNT')) * 2 + 1
 
 # Output handling

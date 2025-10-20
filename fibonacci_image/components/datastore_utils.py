@@ -1,18 +1,18 @@
-from os import environ
+from os import environ, getpid
 from os.path import exists
+from enum import StrEnum, auto
+from typing import Union
 from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.results import InsertOneResult
 from pymongo.errors import OperationFailure
 from psycopg2 import connect
 from psycopg2.errors import OperationalError
-from enum import StrEnum, auto
 from base64 import b64encode
 from json import dumps
 from hashlib import sha256
 from requests import request, Response, RequestException
 from datetime import datetime
-
 
 # Specify desired API and datastore
 SERVER_API: str = environ.get('SERVER_API')
@@ -36,6 +36,7 @@ DATASTORE_OPERATIONS_LOG_COUNT: int = 0
 DATASTORE_ADDRESS: str = environ.get('DATASTORE_ADDRESS')
 DATASTORE_PORT: int = int(environ.get('DATASTORE_PORT'))
 
+
 # Create datastore connection if needed
 class DatastoreType(StrEnum):
     DSNONE = 'none'
@@ -44,42 +45,32 @@ class DatastoreType(StrEnum):
     MONGODB = auto()
     POSTGRESQL = auto()
 
+
 DATASTORE_USER: str = environ.get('DATASTORE_USER', 'N/A')
 DATASTORE_PASSWORD: str = environ.get('DATASTORE_PASSWORD', 'N/A')
-assert DATASTORE_USER != 'N/A' and DATASTORE_PASSWORD != 'N/A', 'Not enough credentials for accessing datastore.'
 
 if SERVER_DATASTORE == DatastoreType.MONGODB.value:
-    DATASTORE_CONNECTION = MongoClient(
-        host=DATASTORE_ADDRESS, port=DATASTORE_PORT, username=DATASTORE_USER, password=DATASTORE_PASSWORD, tls=True,
-        tlsCAFile=SECRET_CA_CERT_TARGET, tlsCertificateKeyFile=SECRET_PEM_TARGET
+    DATASTORE_CONNECTION: Union[MongoClient, connect] = MongoClient(
+        host=DATASTORE_ADDRESS, port=DATASTORE_PORT, username=DATASTORE_USER, password=DATASTORE_PASSWORD
+        # tls=True, tlsCAFile=SECRET_CA_CERT_TARGET, tlsCertificateKeyFile=SECRET_PEM_TARGET
     )
     DATASTORE_DATABASE: Database = DATASTORE_CONNECTION[DATASTORE_USER]
-    DATASTORE_DATABASE.create_collection(
-        name='datastore',
-        timeseries={
-            'timeField': 'log_time',
-            'metaField': 'log_server',
-            'granularity': 'seconds'
-        }
-    )
+    if 'datastore' not in DATASTORE_DATABASE.list_collection_names():
+        DATASTORE_DATABASE.create_collection(
+            name='datastore',
+            timeseries={
+                'timeField': 'log_time',
+                'metaField': 'log_server',
+                'granularity': 'seconds'
+            }
+        )
 elif SERVER_DATASTORE == DatastoreType.POSTGRESQL.value:
-    DATASTORE_CONNECTION = connect(
+    DATASTORE_CONNECTION: Union[MongoClient, connect] = connect(
         dbname=DATASTORE_USER, user=DATASTORE_USER, password=DATASTORE_PASSWORD, host=DATASTORE_ADDRESS,
-        port=DATASTORE_PORT, sslmode='require', sslcert=SECRET_CERT_TARGET, sslkey=SECRET_KEY_TARGET,
-        sslcertmode='require', sslrootcert=SECRET_CA_CERT_TARGET
+        port=DATASTORE_PORT
+        # sslmode='require', sslcert=SECRET_CERT_TARGET, sslkey=SECRET_KEY_TARGET,
+        # sslcertmode='require', sslrootcert=SECRET_CA_CERT_TARGET
     )
-    with DATASTORE_CONNECTION.cursor() as creation_cursor:
-        creation_cursor.execute("""
-        CREATE TABLE IF NOT EXISTS datastore (
-            log_id SERIAL PRIMARY KEY NOT NULL,
-            log_time TIMESTAMP NOT NULL,
-            log_server VARCHAR(500) NOT NULL,
-            log_type VARCHAR(20) NOT NULL,
-            log_kinds VARCHAR(20) NOT NULL,
-            log_details VARCHAR(120) NOT NULL,
-            log_hash VARCHAR(64) NOT NULL,
-        );
-        """)
 
 
 # Specify valid API types
@@ -115,11 +106,11 @@ class LogKind(StrEnum):
 
 def create_log(log_type: LogType, log_kinds: list[LogKind], server_id: dict, details: str) -> dict:
     # Create log
-    new_log: dict = {
-        'time': datetime.now(),
+    new_log: dict[str, str] = {
+        'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'),
         'server': b64encode(dumps(server_id).encode()).decode(),
         'type': log_type.value,
-        'kinds': ';'.join([lk.value for lk in log_kinds]),
+        'kinds': ';'.join([str(lk.value) for lk in log_kinds]),
         'details': details
     }
 
@@ -128,7 +119,8 @@ def create_log(log_type: LogType, log_kinds: list[LogKind], server_id: dict, det
     return new_log
 
 
-def save_log(filepath: str, cur_log: dict, server_id: dict = {}, is_operation: bool = False):
+def save_log(filepath: str, cur_log: dict, server_id: Union[dict, None] = None,
+             is_operation: bool = False) -> Union[tuple[bool, bool], bool]:
     global DATASTORE_FILEPATH
     global DATASTORE_DEFAULT_FILEPATH
     global DATASTORE_OPERATIONS_FILEPATH
@@ -139,15 +131,15 @@ def save_log(filepath: str, cur_log: dict, server_id: dict = {}, is_operation: b
     # Get log count
     if filepath == DATASTORE_FILEPATH:
         DATASTORE_LOG_COUNT += 1
-        cur_log_count = DATASTORE_LOG_COUNT
+        cur_log_count: int = DATASTORE_LOG_COUNT
     elif filepath == DATASTORE_DEFAULT_FILEPATH:
         DATASTORE_DEFAULT_LOG_COUNT += 1
-        cur_log_count = DATASTORE_DEFAULT_LOG_COUNT
+        cur_log_count: int = DATASTORE_DEFAULT_LOG_COUNT
     elif filepath == DATASTORE_OPERATIONS_FILEPATH:
         DATASTORE_OPERATIONS_LOG_COUNT += 1
-        cur_log_count = DATASTORE_OPERATIONS_LOG_COUNT
+        cur_log_count: int = DATASTORE_OPERATIONS_LOG_COUNT
     else:
-        cur_log_count = -1
+        cur_log_count: int = -1
     assert cur_log_count > 0, 'File path should match one of the set paths.'
 
     # Write down everything
@@ -163,12 +155,11 @@ def save_log(filepath: str, cur_log: dict, server_id: dict = {}, is_operation: b
         details: str ='Log saving event successful.'
     except FileNotFoundError:
         success: bool = False
-        details: str = 'Local Datastore location not found.'
+        details: str = 'Log saving event unsuccessful. Local Datastore location not found.'
 
     if not is_operation:
-        ds_log = create_log(LogType.OPERATION, [LogKind.ONLOG], server_id, details)
+        ds_log: dict = create_log(LogType.OPERATION, [LogKind.ONLOG], server_id, details)
         op_success: bool = save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
-
         return success, op_success
     else:
         return success
@@ -198,17 +189,11 @@ def send_log(cur_log: dict, server_id: dict):
                 cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
                 verify=SECRET_CA_CERT_TARGET
             )
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Return info for file datastore sending: {response.json()}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Return info for file datastore sending: {response.json()}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
         except RequestException as e:
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Experienced Request Exception for file datastore. Details: {e}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Experienced Request Exception for file datastore. Details: {e}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
     elif SERVER_DATASTORE == DatastoreType.ELASTICSTACK.value:  # Send to remote elasticstack
         try:
             response: Response = request(
@@ -219,78 +204,63 @@ def send_log(cur_log: dict, server_id: dict):
                 cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
                 verify=SECRET_CA_CERT_TARGET
             )
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Return info for ElasticStack datastore sending: {response.json()}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Return info for ElasticStack datastore sending: {response.json()}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
         except RequestException as e:
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Experienced Request Exception for Elasticstack datastore. Details: {e}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Experienced Request Exception for Elasticstack datastore. Details: {e}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
     elif SERVER_DATASTORE == DatastoreType.MONGODB.value:  # Send to remote MongoDB
         # Write to collection
         try:
             result: InsertOneResult = DATASTORE_CONNECTION[DATASTORE_USER]['datastore'].insert_one({
-                'log_time': cur_log['time'],
+                'log_time': datetime.strptime(cur_log['time'], '%Y-%m-%d %H:%M:%S.%f'),
                 'log_server': cur_log['server'],
                 'log_type': cur_log['type'],
                 'log_kinds': cur_log['kinds'],
                 'log_details': cur_log['details'],
                 'log_hash': cur_log['hash']
             })
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Result ID for MongoDB datastore sending: {result.inserted_id}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Result ID for MongoDB datastore sending: {result.inserted_id}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
         except OperationFailure as e:
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Experienced Operational Failure. Details: {e}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Experienced Operational Failure. Details: {e}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
     elif SERVER_DATASTORE == DatastoreType.POSTGRESQL.value:  # Send to remote PostgreSQL
         # Write to table
         try:
-            with DATASTORE_CONNECTION.cursor() as insert_cursor:
-                insert_cursor.execute(
-                    "INSERT INTO TABLE datastore VALUES (%s, %s, %s, %s, %s, %s);",
-                    (
-                        cur_log['time'], cur_log['server'], cur_log['type'], cur_log['kinds'], cur_log['details'],
-                        cur_log['hash'],
+            with DATASTORE_CONNECTION:
+                with DATASTORE_CONNECTION.cursor() as insert_cursor:
+                    insert_cursor.execute("""
+                        INSERT INTO datastore (log_time, log_server, log_type, log_kinds, log_details, log_hash) 
+                        VALUES (%s, %s, %s, %s, %s, %s);
+                        """,
+                        (
+                            datetime.strptime(cur_log['time'], '%Y-%m-%d %H:%M:%S.%f'), cur_log['server'],
+                            cur_log['type'], cur_log['kinds'], cur_log['details'], cur_log['hash'],
+                        )
                     )
-                )
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Successfully log with hash {cur_log["hash"]} to datastore.'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Successfully log with hash {cur_log["hash"]} to datastore.'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
         except OperationalError as e:
-            ds_log: dict = create_log(
-                LogType.OPERATION, [LogKind.ONLOG], server_id,
-                f'Experienced Operational Error. Details: {e}'
-            )
-            save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+            ds_details: str = f'Experienced Operational Error. Details: {e}'
+            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
     else:  # Error out
-        ds_log: dict = create_log(
-            LogType.OPERATION, [LogKind.ONLOG], server_id,
-            'Could not match server datastore option to available constants.'
-        )
-        save_log(DATASTORE_OPERATIONS_FILEPATH, ds_log, is_operation=True)
+        ds_details: str = 'Could not match server datastore option to available constants.'
+        report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
 
 
-def report_log(log_type: LogType, log_kinds: list[LogKind], server_id: dict, details: str) -> None:
-    # Send details to output
-    print(details, flush=True)
+def report_log(log_type: LogType, log_kinds: list[LogKind], server_id: dict, details: str,
+               is_operation: bool = False) -> None:
+    global DATASTORE_OPERATIONS_FILEPATH
 
-    # Create log
-    new_log = create_log(log_type, log_kinds, server_id, details)
-
-    # Send log to datastore
-    send_log(new_log, server_id)
+    if is_operation:
+        print(f'Gunicorn Worker {getpid()} Operation Log: {details}', flush=True)
+        new_log: dict = create_log(log_type, log_kinds, server_id, details)
+        save_log(DATASTORE_OPERATIONS_FILEPATH, new_log, is_operation=is_operation)
+    else:
+        print(f'Gunicorn Worker {getpid()} Server Log: {details}', flush=True)
+        new_log: dict = create_log(log_type, log_kinds, server_id, details)
+        send_log(new_log, server_id)
 
 
 '''
