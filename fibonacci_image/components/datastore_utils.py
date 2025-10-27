@@ -194,21 +194,21 @@ def send_log(cur_log: dict, server_id: dict):
         except RequestException as e:
             ds_details: str = f'Experienced Request Exception for file datastore. Details: {e}'
             report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
-    elif SERVER_DATASTORE == DatastoreType.ELASTICSTACK.value:  # Send to remote elasticstack
-        try:
-            response: Response = request(
-                method='POST',
-                url=f'https://{DATASTORE_ADDRESS}:{DATASTORE_PORT}',
-                auth=(DATASTORE_USER, DATASTORE_PASSWORD),
-                json=cur_log,
-                cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
-                verify=SECRET_CA_CERT_TARGET
-            )
-            ds_details: str = f'Return info for ElasticStack datastore sending: {response.json()}'
-            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
-        except RequestException as e:
-            ds_details: str = f'Experienced Request Exception for Elasticstack datastore. Details: {e}'
-            report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
+    # elif SERVER_DATASTORE == DatastoreType.ELASTICSTACK.value:  # Send to remote elasticstack
+    #     try:
+    #         response: Response = request(
+    #             method='POST',
+    #             url=f'http://{DATASTORE_ADDRESS}:{DATASTORE_PORT}',
+    #             auth=(DATASTORE_USER, DATASTORE_PASSWORD),
+    #             json=cur_log
+    #             # cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
+    #             # verify=SECRET_CA_CERT_TARGET
+    #         )
+    #         ds_details: str = f'Return info for ElasticStack datastore sending: {response.json()}'
+    #         report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
+    #     except RequestException as e:
+    #         ds_details: str = f'Experienced Request Exception for Elasticstack datastore. Details: {e}'
+    #         report_log(LogType.OPERATION, [LogKind.ONLOG], server_id, ds_details, is_operation=True)
     elif SERVER_DATASTORE == DatastoreType.MONGODB.value:  # Send to remote MongoDB
         # Write to collection
         try:

@@ -1,6 +1,8 @@
 asciidoctor -b docbook README.adoc
 pandoc --toc -f docbook -t markdown_mmd -o README.md README.xml --wrap=none
 
+# Table of Contents
+
 1. [Versioning](#versioning)
    1. [Changelog](#changelog)
 2. [Required Software](#required-software)
