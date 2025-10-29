@@ -165,7 +165,7 @@ def send_log(cur_log: dict, server_id: dict):
         try:
             cur_log['data_stream'] = {
                 'type': 'logs',
-                'dataset': f'fibonacci-{server_id['SERVER_API']}-{server_id['SERVER_STAGE_INDEX']}-{server_id['WORKER_ID']}',
+                'dataset': f'fibonacci-{server_id['API']}-{server_id['STAGE_INDEX']}-{server_id['WORKER_PID']}',
                 'namespace': 'datastore'
             }
             response: Response = request(

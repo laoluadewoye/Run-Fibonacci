@@ -1,7 +1,7 @@
 [cols="1,1"]
 |===
 
-a|Version 2.2.0 (In Development)
+a|Version 2.2.0 (Available tags are `latest`, `2.2.0`, `2.2.0-alpine`, `2.2.0-alma`)
 a|* Added placeholder files for other API options.
 * Got a working Elasticstack setup during testing and uncommented the logic for it.
 * Added back a test logstash configuration YAML and a pipeline to testing folder.
@@ -14,7 +14,7 @@ to outputting plain text.
 * Updated `Configurable Server Environmental Settings` section in image README to reflect new changes.
 * *Note: Still haven't added full TLS for 3rd-party datastores yet, that's a thing for later. It's not that I can't, I want a way to test it from pure python without having to change file permissions on my Windows laptop.*
 
-a|Version 2.1.0 (Available tags are `latest`, `2.1.0`, `2.1.0-alpine`, `2.1.0-alma`)
+a|Version 2.1.0 (Available tags are `2.1.0`, `2.1.0-alpine`, `2.1.0-alma`)
 a|* Added new environmental variables `SECRET_PEM_TARGET`, `DATASTORE_USER`, `DATASTORE_PASSWORD` to support datastore authentication and tls setup.
 * Added `pymongo` and `psycopg2` Python libraries to `requirements.txt`.
 * Changed constant `SERVER_CONFIG` to `SERVER_IDENTIFIER` and simplified `SERVER_IDENTIFIER` to take up less space when saved to datastores in `rest.py`.

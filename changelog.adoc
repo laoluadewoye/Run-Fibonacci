@@ -10,6 +10,7 @@ a|* Changed `engine.network.startAddress` value from 10 to 20 in `setup_config.j
 * Updated `GenerateTLS.py` to save files as part of `create_key_cert` function.
 * Finalized section for datastores in `README.adoc` and `setup_config.json`.
 * Updated fibonacci image from version 1.1.0 to version 2.2.0 (see image changelog).
+* Added `system_setup` folder for ansible/terraform setups of project environment.
 
 |Version 1.0.1
 a|* Renamed the `setup_config.json` keys `platform` and `kube` to `engine` and `orchestrator` respectively.

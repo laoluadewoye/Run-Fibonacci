@@ -11,4 +11,5 @@ pandoc --toc -f docbook -t markdown_mmd -o README.md README.xml --wrap=none
    2. [Other Image Details](#other-image-details)
 4. [Other Files in Directory](#other-files-in-directory)
 5. [Software Bill of Materials](#software-bill-of-materials)
-6. [Configurable Server Environmental Arguments](#configurable-server-environmental-arguments)
+6. [Configurable Server Environmental Settings](#configurable-server-environmental-settings)
+   1. [Settings List](#settings-list)

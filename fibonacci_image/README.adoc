@@ -123,9 +123,9 @@ Lastly, to set what JSON file the server uses to configure itself to check, set 
 
 The following precedent is set for configured settings:
 
-Highest Priority: Environmental variable counterparts
-Medium Priority: `SERVER_CONFIG_FILEPATH` configuration file
-Lowest Priority: `DEFAULT_SERVER_CONFIG_FILEPATH` configuration file
+* Highest Priority: Environmental variable counterparts
+* Medium Priority: `SERVER_CONFIG_FILEPATH` configuration file
+* Lowest Priority: `DEFAULT_SERVER_CONFIG_FILEPATH` configuration file
 
 === Settings List
 

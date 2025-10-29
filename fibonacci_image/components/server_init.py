@@ -1,7 +1,8 @@
 from os import environ
 from json import load
 from copy import deepcopy
-from typing import Any, Generator, Union
+from collections.abc import Iterator
+from typing import Any
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -11,7 +12,7 @@ from ipaddress import ip_address
 from datetime import datetime, timedelta, timezone
 
 
-def get_all_settings(cur_config: dict, prefix: str = '') -> Generator[str]:
+def get_all_settings(cur_config: dict, prefix: str = '') -> Iterator[str]:
     for key, value in cur_config.items():
         if isinstance(value, dict):
             yield f'{prefix}{key}.'
@@ -132,9 +133,11 @@ with open(environ.get('SERVER_CONFIG_FILEPATH')) as config_file:
 
 if environ.get('SERVER_CONFIG_FILEPATH') == environ.get('DEFAULT_SERVER_CONFIG_FILEPATH'):
     default_config: dict = server_config
+    config_mod_src: str = "default"
 else:
     with open(environ.get('DEFAULT_SERVER_CONFIG_FILEPATH')) as default_file:
         default_config: dict = load(default_file)
+    config_mod_src: str = "custom"
 
 # Create the runtime configuration
 settings: list[str] = [config for config in get_all_settings(default_config)]
@@ -151,8 +154,10 @@ for setting_string in settings:
 
     # Make modifications to final setting
     if env_setting is not None:
+        print(f'Setting {setting_string} from environment...', flush=True)
         access_nested_setting(RUNTIME_CONFIG, setting_string, new_value=env_setting)
     elif server_setting is not None:
+        print(f'Setting {setting_string} from {config_mod_src} configuration...', flush=True)
         access_nested_setting(RUNTIME_CONFIG, setting_string, new_value=server_setting)
     elif default_setting is None:
         raise KeyError(f'{setting_string} does not exist in default configuration.')

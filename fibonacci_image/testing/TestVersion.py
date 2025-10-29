@@ -8,6 +8,7 @@ from ipaddress import ip_address, IPv4Address
 from uuid import uuid4
 from time import sleep
 from requests import request, Response
+from json import dumps
 
 
 def create_server(base_folder: Path, server_network: str, server_ip: str, server_port: int, server_image: str,
@@ -25,32 +26,17 @@ def create_server(base_folder: Path, server_network: str, server_ip: str, server
     run([
         command, 'run', '-d', '-p', f'{server_port}:{server_port}',
         f'--network={server_network}', f'--ip={server_ip}',
-        '-v', f'{base_folder}/test_self.key:/run/secrets/self.key',
-        '-v', f'{base_folder}/test_self.crt:/run/secrets/self.crt',
-        '-v', f'{base_folder}/test_self.pem:/run/secrets/self.pem',
-        '-v', f'{base_folder}/test_ca.crt:/run/secrets/ca.crt',
-        '-e', f'SERVER_API={server_api}',
-        '-e', f'SERVER_DATASTORE={server_datastore}',
-        '-e', 'SERVER_STAGE_COUNT=1',
-        '-e', 'SERVER_STAGE_INDEX=1',
-        '-e', 'SELF_LISTENING_ADDRESS=0.0.0.0',
-        '-e', 'SELF_HEALTHCHECK_ADDRESS=localhost',
-        '-e', f'SELF_PORT={server_port}',
-        '-e', 'SECRET_KEY_TARGET=/run/secrets/self.key',
-        '-e', 'SECRET_CERT_TARGET=/run/secrets/self.crt',
-        '-e', 'SECRET_PEM_TARGET=/run/secrets/self.pem',
-        '-e', 'SECRET_CA_CERT_TARGET=/run/secrets/ca.crt',
-        '-e', 'DEST_ADDRESS=localhost',
-        '-e', f'DEST_PORT={server_port}',
-        '-e', f'DATASTORE_ADDRESS={server_datastore_addr}',
-        '-e', f'DATASTORE_PORT={server_datastore_port}',
-        '-e', 'DATASTORE_FILEPATH=/tmp/datastore.csv',
-        '-e', 'DATASTORE_DEFAULT_FILEPATH=/tmp/default.csv',
-        '-e', 'DATASTORE_OPERATIONS_FILEPATH=/tmp/operations.csv',
-        '-e', f'DATASTORE_USER={server_datastore_user}',
-        '-e', f'DATASTORE_PASSWORD={server_datastore_pass}',
-        '-e', 'THROTTLE_INTERVAL=5',
-        '-e', 'UPPER_BOUND=4000000000',
+        '-v', f'{base_folder}/test_ca.key:/usr/src/app/ca.key',
+        '-v', f'{base_folder}/test_ca.crt:/usr/src/app/ca.crt',
+        '-e', f'API={server_api}',
+        '-e', f'DATASTORE_TYPE={server_datastore}',
+        '-e', f'NETWORK_SELF_PORT={server_port}',
+        '-e', f'NETWORK_DEST_PORT={server_port}',
+        '-e', f'NETWORK_DATASTORE_ADDRESS={server_datastore_addr}',
+        '-e', f'NETWORK_DATASTORE_PORT={server_datastore_port}',
+        '-e', f'DATASTORE_AUTH_USERNAME={server_datastore_user}',
+        '-e', f'DATASTORE_AUTH_PASSWORD={server_datastore_pass}',
+        '-e', f'TLS_SAN_IPS=127.0.0.1,{server_ip}',
         '--name', container_name,
         f'{server_image}-{server_platform}'
     ])
@@ -330,8 +316,7 @@ assert command != '', 'No container engine is running. Please start a container 
 # Set up combinations
 apis: list[str] = ['rest']
 platforms: list[str] = ['alma', 'alpine']
-# datastores: list[str] = ['none', 'file', 'mongodb', 'postgresql']
-datastores: list[str] = ['elasticstack']
+datastores: list[str] = ['none', 'file', 'elasticstack', 'mongodb', 'postgresql']
 test_combos = product(platforms, datastores)
 
 # Start port settings
@@ -478,3 +463,5 @@ for api in apis:
         current_port += 1
 
 print("Done. Use your container engine to stop and delete the container whenever you're done.")
+with open('test_network.json', 'w') as net_file:
+    net_file.write(dumps(test_fib_net, indent=4))
