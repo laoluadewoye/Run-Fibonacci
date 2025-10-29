@@ -4,6 +4,8 @@ from pathlib import Path
 from GenerateTLS import create_key_cert
 from itertools import product
 from ipaddress import ip_address, IPv4Address
+from cryptography.hazmat.primitives import serialization
+
 
 # Get base folder
 BASE_FOLDER = Path(__file__).resolve().parent
@@ -62,3 +64,13 @@ external_key, external_cert = create_key_cert(
     public_exponent=65537, key_length=4096, filename=f'{BASE_FOLDER}/test_self', key_ext='key', cert_ext='crt',
     pem_ext='pem', issuer_key=ca_key, issuer_cert=ca_cert, ca_suffix='ca', is_key_encrypter=True
 )
+
+with open('test_ca.key', 'rb') as ca_key_file:
+    key = serialization.load_pem_private_key(ca_key_file.read(), None)
+    print(key)
+
+with open('test_ca.crt', 'rb') as ca_cert_file:
+    certificate = x509.load_pem_x509_certificate(ca_cert_file.read())
+    print(certificate)
+
+print('Creating server TLS materials...'.split(','))

@@ -1,0 +1,61 @@
+{
+    "api": "rest",
+    "datastore": {
+        "auth": {
+            "username": "",
+            "password": ""
+        },
+        "logs": {
+            "defaultPath": "/tmp/default.csv",
+            "operationPath": "/tmp/operations.csv",
+            "serverPath": "/tmp/datastore.csv"
+        },
+        "type": "none"
+    },
+    "network": {
+        "datastore": {
+            "address": "127.0.0.1",
+            "port": 8080
+        },
+        "dest": {
+            "address": "127.0.0.1",
+            "port": 8080
+        },
+        "self": {
+            "address": {
+                "healthcheck": "127.0.0.1",
+                "listening": "0.0.0.0"
+            },
+            "port": 8080
+        }
+    },
+    "stage": {
+        "count": 1,
+        "index": 1
+    },
+    "throttleSecs": 5,
+    "tls": {
+        "ca": {
+            "keyPath": "./ca.key",
+            "certPath": "./ca.crt"
+        },
+        "gen": {
+            "caSuffix": "ca",
+            "certDays": 1,
+            "ext": {
+                "cert": "crt",
+                "key": "key",
+                "pem": "pem"
+            },
+            "keyLength": 4096,
+            "pubExponent": 65537,
+            "secretTarget": "./self"
+        },
+        "san": {
+            "ips": "127.0.0.1",
+            "names": "localhost"
+        }
+    },
+    "upperBound": 4000000000,
+    "workers": 3
+}

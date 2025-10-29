@@ -1,89 +1,66 @@
+from server_init import *
+from os import getpid, name
+from platform import win32_ver, freedesktop_os_release
 from flask import Flask, request as flask_request, jsonify
 from requests import request as requests_request, Response
 from sys import version
 from threading import Thread
 from time import sleep
-from os import environ, getpid
 from datastore_utils import APIType, DatastoreType, LogType, LogKind, report_log, save_log
 
 # Create a server identifier
+if name == 'nt':
+    os_version: str = f'Windows {win32_ver()[0]}.{win32_ver()[1]}'
+else:
+    os_version: str = f'{freedesktop_os_release()['PRETTY_NAME']}'
+
 SERVER_IDENTIFIER: dict = {
-    'PYTHON_INFO': version,
-    'WORKER_ID': getpid(),
-    'SERVER_API': environ.get('SERVER_API', 'N/A'),
-    'SERVER_DATASTORE': environ.get('SERVER_DATASTORE', 'N/A'),
-    'SERVER_STAGE_INDEX': environ.get('SERVER_STAGE_INDEX', 'N/A'),
-    'SELF_LISTENING_ADDRESS': environ.get('SELF_LISTENING_ADDRESS', 'N/A'),
-    'SELF_PORT': environ.get('SELF_PORT', 'N/A'),
+    'PYTHON_VERSION': version,
+    'OS_VERSION': os_version,
+    'WORKER_PID': getpid(),
+    'API': API,
+    'DATASTORE_TYPE': DATASTORE_TYPE,
+    'STAGE_INDEX': STAGE_INDEX
 }
 
-# Create log from version
-report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER, version)
-
-# Get the TLS materials
-assert 'SECRET_KEY_TARGET' in environ
-SECRET_KEY_TARGET: str = environ.get('SECRET_KEY_TARGET')
-assert 'SECRET_CERT_TARGET' in environ
-SECRET_CERT_TARGET: str = environ.get('SECRET_CERT_TARGET')
-assert 'SECRET_PEM_TARGET' in environ
-assert 'SECRET_CA_CERT_TARGET' in environ
-SECRET_CA_CERT_TARGET: str = environ.get('SECRET_CA_CERT_TARGET')
-
-# Get the datastore filepaths
-assert 'DATASTORE_DEFAULT_FILEPATH' in environ
+# Create log from the server identifier
 report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'The datastore default log location is {environ.get('DATASTORE_DEFAULT_FILEPATH')}.')
-assert 'DATASTORE_OPERATIONS_FILEPATH' in environ
-report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'The datastore operations log location is {environ.get('DATASTORE_OPERATIONS_FILEPATH')}.')
-assert 'DATASTORE_FILEPATH' in environ
-DATASTORE_FILEPATH: str = environ.get('DATASTORE_FILEPATH')
-report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'The datastore log location is {DATASTORE_FILEPATH}.')
+           f'The server identifier is {SERVER_IDENTIFIER}')
 
-# Get the server API
-assert 'SERVER_API' in environ
-SERVER_API: str = environ.get('SERVER_API')
-assert SERVER_API in [member.value for member in APIType]
-report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER, f'The server API is {SERVER_API}.')
+# Create log from the datastore filepaths
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
+           f'The datastore default server log location is {DATASTORE_LOGS_DEFAULT_PATH}.')
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
+           f'The datastore operations log location is {DATASTORE_LOGS_OPERATION_PATH}.')
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
+           f'The datastore server log location is {DATASTORE_LOGS_SERVER_PATH}.')
+
+# Create log from the server API
+assert API in [member.value for member in APIType]
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER, f'The server API is {API}.')
 
 # Get the server datastore
-assert 'SERVER_DATASTORE' in environ
-SERVER_DATASTORE: str = environ.get('SERVER_DATASTORE')
-assert SERVER_DATASTORE in [member.value for member in DatastoreType]
-report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER, f'The server datastore is {SERVER_DATASTORE}.')
+assert DATASTORE_TYPE in [member.value for member in DatastoreType]
+report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER, f'The server datastore is {DATASTORE_TYPE}.')
 
 # Get the server count
-assert 'SERVER_STAGE_COUNT' in environ
-SERVER_STAGE_COUNT: int = int(environ.get('SERVER_STAGE_COUNT'))
 report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'Total amount of servers in the network is {SERVER_STAGE_COUNT}.')
+           f'Total amount of servers in the network is {STAGE_COUNT}.')
 
 # Get the server index
-assert 'SERVER_STAGE_INDEX' in environ
-SERVER_STAGE_INDEX: int = int(environ.get('SERVER_STAGE_INDEX'))
-assert 0 < SERVER_STAGE_INDEX <= SERVER_STAGE_COUNT
+assert 0 < STAGE_INDEX <= STAGE_COUNT
 report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'Server index validated. Index is {SERVER_STAGE_INDEX}.')
+           f'Server index validated. Index is {STAGE_INDEX}.')
 
 # Get destination socket
-assert 'DEST_ADDRESS' in environ
-DEST_ADDRESS: str = environ.get('DEST_ADDRESS')
-
-assert 'DEST_PORT' in environ
-DEST_PORT: str = environ.get('DEST_PORT')
 report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'Destination socket created. Socket is {DEST_ADDRESS} at port {DEST_PORT}.')
+           f'Destination socket created. Socket is {NETWORK_DEST_ADDRESS} at port {NETWORK_DEST_PORT}.')
 
 # Get throttle time
-assert 'THROTTLE_INTERVAL' in environ
-THROTTLE_INTERVAL: int = int(environ.get('THROTTLE_INTERVAL'))
 report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER,
-           f'Throttle interval set to {THROTTLE_INTERVAL} second(s).')
+           f'Throttle interval set to {THROTTLE_SECONDS} second(s).')
 
 # Get the upper bound
-assert 'UPPER_BOUND' in environ
-UPPER_BOUND: int = int(environ.get('UPPER_BOUND'))
 report_log(LogType.OPERATION, [LogKind.ONSTART], SERVER_IDENTIFIER, f'Upper bound of test set to {UPPER_BOUND}.')
 
 # Start the log ID rotation
@@ -96,19 +73,14 @@ app = Flask(__name__)
 
 # Define a sending thread
 def trigger_send(new_fib_one: int, new_fib_two: int, snf_log_id: str) -> None:
-    global DEST_ADDRESS
-    global DEST_PORT
-    global SECRET_CERT_TARGET
-    global SECRET_KEY_TARGET
-    global SECRET_CA_CERT_TARGET
     global SERVER_IDENTIFIER
 
     response: Response = requests_request(
         method='POST',
-        url=f'https://{DEST_ADDRESS}:{DEST_PORT}',
+        url=f'https://{NETWORK_DEST_ADDRESS}:{NETWORK_DEST_PORT}',
         json={'fib_one': new_fib_one, 'fib_two': new_fib_two},
         cert=(SECRET_CERT_TARGET, SECRET_KEY_TARGET),
-        verify=SECRET_CA_CERT_TARGET
+        verify=TLS_CA_CERT_PATH
     )
     report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.TRIGGERSEND], SERVER_IDENTIFIER,
                f'Return code for message ID {snf_log_id}: {response.status_code}')
@@ -120,10 +92,7 @@ def trigger_send(new_fib_one: int, new_fib_two: int, snf_log_id: str) -> None:
 @app.route('/', methods=['POST'])
 def process_fib_numbers() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
-    global THROTTLE_INTERVAL
-    global SERVER_STAGE_INDEX
     global SNF_LOG_ID
-    global UPPER_BOUND
 
     # Get numbers
     fib_numbers: dict = flask_request.get_json(force=True, silent=True)
@@ -152,10 +121,10 @@ def process_fib_numbers() -> tuple[Response, int]:
                f'Sending numbers {new_fib_one} and {new_fib_two} in fibonacci sequence.')
 
     # Artificial throttling
-    sleep(THROTTLE_INTERVAL)
+    sleep(THROTTLE_SECONDS)
 
     # Update the current log id
-    SNF_LOG_ID = f'{SERVER_STAGE_INDEX}-{new_fib_one}-{new_fib_two}'
+    SNF_LOG_ID = f'{STAGE_INDEX}-{new_fib_one}-{new_fib_two}'
 
     # Decide on a response to send back
     if new_fib_one < UPPER_BOUND:  # Run the bash script to forward the next server in line
@@ -201,12 +170,11 @@ def get_healthcheck() -> tuple[Response, int]:
 def start_fib() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
     global SNF_LOG_ID
-    global SERVER_STAGE_INDEX
 
     report_log(LogType.RECEIVE, [LogKind.ONCALL, LogKind.START], SERVER_IDENTIFIER, 'GET start request received.')
 
     # Set the log ID to the starting default
-    SNF_LOG_ID = f'{SERVER_STAGE_INDEX}-0-0'
+    SNF_LOG_ID = f'{STAGE_INDEX}-0-0'
 
     # Run the bash script to start the sequence at 0 0
     trigger_send_thread: Thread = Thread(target=trigger_send, args=(0, 0, SNF_LOG_ID,))
@@ -224,7 +192,6 @@ def start_fib() -> tuple[Response, int]:
 def process_log() -> tuple[Response, int]:
     global SERVER_IDENTIFIER
     global SNF_LOG_ID
-    global DATASTORE_FILEPATH
 
     # Get log
     cur_log: dict = flask_request.get_json(force=True, silent=True)
@@ -234,7 +201,7 @@ def process_log() -> tuple[Response, int]:
         return jsonify({'status': 'Fail', 'message': msg, 'result': SNF_LOG_ID}), 422
 
     # Save log to file
-    success, op_success = save_log(DATASTORE_FILEPATH, cur_log, SERVER_IDENTIFIER)
+    success, op_success = save_log(DATASTORE_LOGS_SERVER_PATH, cur_log, SERVER_IDENTIFIER)
     if success and op_success:
         status: str = 'Success'
         msg: str = f'POST datastore request succeeded. Saved log.'

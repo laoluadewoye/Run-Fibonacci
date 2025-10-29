@@ -50,5 +50,9 @@ USER app
 # Setup the healthcheck
 HEALTHCHECK --start-period=10s --interval=10s --timeout=5s --retries=3 CMD python3 /usr/src/app/send_healthcheck.py
 
+# Set default enviornmental variables
+ENV SERVER_CONFIG_FILEPATH="/usr/src/app/server_config.json"
+ENV DEFAULT_SERVER_CONFIG_FILEPATH="/usr/src/app/server_config.json"
+
 # Run the server
 ENTRYPOINT ["gunicorn"]

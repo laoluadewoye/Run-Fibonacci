@@ -1,6 +1,8 @@
 from pathlib import Path
 from os.path import exists
 from subprocess import run, CompletedProcess
+from base64 import b64encode
+from secrets import token_bytes
 from itertools import product
 from ipaddress import ip_address, IPv4Address
 from uuid import uuid4
@@ -54,112 +56,149 @@ def create_server(base_folder: Path, server_network: str, server_ip: str, server
     ])
 
 
-# def create_elasticstack(base_folder: Path, server_network: str, server_info: zip, container_name: str,
-#                         server_datastore_user: str, server_datastore_pass: str) -> None:
-#     # Set ElasticSearch defaults for later
-#     es_ip: str = ''
-#     es_port: int = -1
-#     es_password: str = ''
-#     es_token: str = ''
-#
-#     # Loop through datastore components
-#     for server_component, server_ip, server_port in server_info:
-#         print(f'\nComponent: {server_component}')
-#         print(f'IP Address: {server_ip}')
-#         print(f'Port: {server_port}')
-#
-#         # Check if test datastore already exist and delete if needed
-#         component_output: CompletedProcess = run(
-#             [command, 'ps', '-a', '--filter', f'name={container_name}-{server_component}'], capture_output=True,
-#             text=True
-#         )
-#         if component_output.stdout.split('\n')[1] != '':
-#             run([command, 'stop', f'{container_name}-{server_component}'])
-#             run([command, 'rm', f'{container_name}-{server_component}'])
-#
-#         # Start components
-#         if server_component == 'logstash':
-#             # # Customize pipeline
-#             # with open(f'{base_folder}/logstash_pipeline.conf') as pipeline_file:
-#             #     pf_lines = pipeline_file.readlines()
-#             #     es_host_split = pf_lines[-3].split('"')
-#             #     es_host_split[1] = f'{es_ip}:{es_port}'
-#             #
-#             # pf_lines[-3] = '"'.join(es_host_split)
-#             # with open(f'{base_folder}/logstash_pipeline_custom.conf', 'w') as pipeline_file:
-#             #     pipeline_file.writelines(pf_lines)
-#
-#             run([
-#                 command, 'run', '-d', '-m', '1GB', '-p', f'{server_port}:{server_port}',
-#                 f'--network={server_network}', f'--ip={server_ip}',
-#                 '-v', f'{base_folder}/logstash_pipeline.conf:/usr/share/logstash/pipeline/logstash.conf',
-#                 '-v', f'{base_folder}/logstash_config.yml:/usr/share/logstash/config/logstash.yml',
-#                 # '-e', f'API_HTTP_HOST={server_ip}',
-#                 '-e', f'API_HTTP_PORT={server_port}',
-#                 '-e', f'ES_HOST={es_ip}',
-#                 '-e', f'ES_PORT={es_port}',
-#                 '-e', 'API_AUTH_TYPE=basic',
-#                 '-e', f'API_AUTH_BASIC_USERNAME={server_datastore_user}',
-#                 '-e', f'API_AUTH_BASIC_PASSWORD={server_datastore_pass}',
-#                 '-e', 'API_AUTH_BASIC_PASSWORD_POLICY_MODE=ERROR',
-#                 '-e', 'LOG_FORMAT=json',
-#                 '-e', 'PIPELINE_ECS_COMPATIBILITY=v8',
-#                 '--name', f'{container_name}-{server_component}',
-#                 'docker.io/library/logstash:8.17.10'
-#             ])
-#         elif server_component == 'elasticsearch':
-#             # Set values for later
-#             es_ip = server_ip
-#             es_port = server_port
-#
-#             # Start server component
-#             run([
-#                 command, 'run', '-d', '-m', '1GB', '-p', f'{server_port}:{server_port}',
-#                 f'--network={server_network}', f'--ip={server_ip}',
-#                 '--name', f'{container_name}-{server_component}',
-#                 'docker.io/library/elasticsearch:8.17.10', # '-E', f'http.port={server_port}'
-#             ])
-#
-#             # Wait for elasticsearch to finish startup tasks
-#             for i in range(20, 0, -1):
-#                 print(f'Waiting {i} seconds for elasticsearch to start before calling for auth...')
-#                 sleep(1)
-#
-#             # Obtain elastic password
-#             component_output: CompletedProcess = run(
-#                 [
-#                     command, 'exec', f'{container_name}-{server_component}',
-#                     '/usr/share/elasticsearch/bin/elasticsearch-reset-password', '--batch', '--username', 'elastic'
-#                 ],
-#                 capture_output=True, text=True
-#             )
-#             es_password = component_output.stdout[-22:-1]
-#             print()
-#
-#             # Obtain kibana token
-#             component_output: CompletedProcess = run (
-#                 [
-#                     command, 'exec', f'{container_name}-{server_component}',
-#                     '/usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token', '--scope', 'kibana'
-#                 ],
-#                 capture_output=True, text=True
-#             )
-#             es_token = component_output.stdout[:-1]
-#             print()
-#
-#         elif server_component == 'kibana':
-#             run([
-#                 command, 'run', '-d', '-m', '1GB', '-p', f'{server_port}:{server_port}',
-#                 f'--network={server_network}', f'--ip={server_ip}',
-#                 '-e', 'SERVER_HOST=0.0.0.0',
-#                 '-e', f'SERVER_PORT={server_port}',
-#                 '-e', f'ELASTICSEARCH_HOSTS=http://{es_ip}:{es_port}',
-#                 '-e', f'ELASTICSEARCH_USERNAME={server_datastore_user}',
-#                 '-e', f'ELASTICSEARCH_PASSWORD={server_datastore_pass}',
-#                 '-e', f'ELASTICSEARCH_SERVICEACCOUNTTOKEN={es_token}', #serviceAccountToken
-#                 '--name', f'{container_name}-{server_component}',
-#                 'docker.io/library/kibana:8.17.10'
-#             ])
+def create_elasticstack(base_folder: Path, server_network: str, server_info: zip, container_name: str,
+                        server_datastore_user: str, server_datastore_pass: str) -> None:
+    # Set ElasticStack defaults for later
+    es_ip: str = ''
+    es_port: int = 9200
+    es_user: str = 'elastic'
+    es_ca_cert_name: str = 'test_es_ca.crt'
+    kibana_port: int = 5601
+    kibana_user: str = 'kibana_system'
+    kibana_password: str = ''
+    logstash_port: int = 9600
+    logstash_user: str = 'logstash_es'
+    logstash_password: str = server_datastore_pass
+
+    # Loop through datastore components
+    for server_component, server_ip, server_port in server_info:
+        print(f'\nComponent: {server_component}')
+        print(f'IP Address: {server_ip}')
+        print(f'Port: {server_port}')
+
+        # Check if test datastore already exist and delete if needed
+        component_output: CompletedProcess = run(
+            [command, 'ps', '-a', '--filter', f'name={container_name}-{server_component}'], capture_output=True,
+            text=True
+        )
+        if component_output.stdout.split('\n')[1] != '':
+            run([command, 'stop', f'{container_name}-{server_component}'])
+            run([command, 'rm', f'{container_name}-{server_component}'])
+
+        # Start components
+        if server_component == 'elasticsearch':
+            # Set ip address for later
+            es_ip = server_ip
+
+            # Start server component
+            run([
+                command, 'run', '-d', '-m', '1GB', '-p', f'{server_port}:{es_port}',
+                f'--network={server_network}', f'--ip={server_ip}',
+                '--name', f'{container_name}-{server_component}',
+                'docker.elastic.co/elasticsearch/elasticsearch:9.2.0'
+            ])
+
+            # Wait for elasticsearch to finish startup tasks
+            for i in range(20, 0, -1):
+                print(f'Waiting {i} seconds for elasticsearch to start before calling for auth...')
+                sleep(1)
+
+            # Obtain elastic password
+            component_output: CompletedProcess = run(
+                [
+                    command, 'exec', f'{container_name}-{server_component}',
+                    '/usr/share/elasticsearch/bin/elasticsearch-reset-password', '--batch', '--username', es_user
+                ],
+                capture_output=True, text=True
+            )
+            es_password = component_output.stdout[-21:-1]
+            print('Elasticsearch password created.')
+
+            # Copy Elasticsearch's CA cert to filesystem
+            run([
+                command, 'cp', f'{container_name}-{server_component}:/usr/share/elasticsearch/config/certs/http_ca.crt',
+                f'{base_folder}/{es_ca_cert_name}'
+            ])
+            print('Elasticsearch CA cert saved.')
+
+            # Obtain kibana password
+            component_output: CompletedProcess = run(
+                [
+                    command, 'exec', f'{container_name}-{server_component}',
+                    '/usr/share/elasticsearch/bin/elasticsearch-reset-password', '--batch', '--username', kibana_user
+                ],
+                capture_output=True, text=True
+            )
+            kibana_password = component_output.stdout[-21:-1]
+            print('Kibana password created.')
+
+            # Save information
+            with open(f'{base_folder}/test_es_credentials.txt', 'w') as es_cred_file:
+                es_cred_file.write(f'es user: {es_user}\n')
+                es_cred_file.write(f'es password: {es_password}\n')
+                es_cred_file.write(f'kibana user: {kibana_user}\n')
+                es_cred_file.write(f'kibana password: {kibana_password}\n')
+
+            # Create logstash user
+            request(
+                method='POST',
+                url=f'https://localhost:{server_port}/_security/role/logstash_writer',
+                auth=(es_user, es_password),
+                json={
+                    'cluster': ['manage_index_templates', 'monitor', 'manage_ilm'],
+                    'indices': [
+                        {
+                            'names': ['logstash-*', '*datastore'],
+                            'privileges': ['write', 'create', 'create_index', 'manage', 'manage_ilm']
+                        }
+                    ]
+                },
+                verify=f'{base_folder}/{es_ca_cert_name}'
+            )
+            print('Logstash role created.')
+            request(
+                method='POST',
+                url=f'https://localhost:{server_port}/_security/user/{logstash_user}',
+                auth=(es_user, es_password),
+                json={
+                    'password' : logstash_password,
+                    'roles' : [ 'logstash_writer'],
+                    'full_name' : 'Logstash system account for Elasticsearch'
+                },
+                verify=f'{base_folder}/{es_ca_cert_name}'
+            )
+            print('Logstash user created.')
+        elif server_component == 'kibana':
+            run([
+                command, 'run', '-d', '-m', '1GB', '-p', f'{server_port}:{kibana_port}',
+                f'--network={server_network}', f'--ip={server_ip}',
+                '-v', f'{base_folder}/{es_ca_cert_name}:/usr/share/kibana/config/certs/es_http_ca.crt',
+                '-e', 'ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/kibana/config/certs/es_http_ca.crt',
+                '-e', f'ELASTICSEARCH_HOSTS=https://{es_ip}:{es_port}',
+                '-e', f'ELASTICSEARCH_USERNAME={kibana_user}',
+                '-e', f'ELASTICSEARCH_PASSWORD={kibana_password}',
+                '-e', f'XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY={b64encode(token_bytes(32)).decode()}',
+                '--name', f'{container_name}-{server_component}',
+                'docker.elastic.co/kibana/kibana:9.2.0'
+            ])
+        elif server_component == 'logstash':
+            run([
+                command, 'run', '-d', '-m', '1GB', '-p', f'{server_port}:{logstash_port}',
+                f'--network={server_network}', f'--ip={server_ip}',
+                '-v', f'{base_folder}/{es_ca_cert_name}:/usr/share/logstash/config/certs/es_http_ca.crt',
+                '-v', f'{base_folder}/logstash_config.yml:/usr/share/logstash/config/logstash.yml',
+                '-v', f'{base_folder}/logstash_pipeline.conf:/usr/share/logstash/pipeline/datastore.conf',
+                '-e', f'API_HTTP_PORT={logstash_port}',
+                '-e', f'HTTP_PLUGIN_PORT={server_port}',
+                '-e', f'API_AUTH_BASIC_USERNAME={server_datastore_user}',
+                '-e', f'API_AUTH_BASIC_PASSWORD={server_datastore_pass}',
+                '-e', f'ELASTICSEARCH_HOST={es_ip}',
+                '-e', f'ELASTICSEARCH_PORT={es_port}',
+                '-e', f'ELASTICSEARCH_USERNAME={logstash_user}',
+                '-e', f'ELASTICSEARCH_PASSWORD={logstash_password}',
+                '--name', f'{container_name}-{server_component}',
+                'docker.elastic.co/logstash/logstash:9.2.0'
+            ])
 
 
 def create_mongodb(base_folder: Path, server_network: str, server_info: zip, container_name: str,
@@ -291,7 +330,8 @@ assert command != '', 'No container engine is running. Please start a container 
 # Set up combinations
 apis: list[str] = ['rest']
 platforms: list[str] = ['alma', 'alpine']
-datastores: list[str] = ['none', 'file', 'mongodb', 'postgresql']
+# datastores: list[str] = ['none', 'file', 'mongodb', 'postgresql']
+datastores: list[str] = ['elasticstack']
 test_combos = product(platforms, datastores)
 
 # Start port settings
@@ -329,7 +369,7 @@ for api in apis:
         print(f'Datastore: {datastore.title()}')
         datastore_name: str = f'test-fib-{api}-{datastore}-datastore'
 
-        if datastore == 'file': # Create flask datastore
+        if datastore == 'file': # Create Flask datastore
             print(f'IP Address: {current_ip}')
             print(f'Port: {current_port}')
             create_server(
@@ -339,18 +379,18 @@ for api in apis:
             test_fib_net[datastore_name] = {'ip': str(current_ip), 'port': current_port}
             current_ip += 1
             current_port += 1
-        # elif datastore == 'elasticstack': # Create ElasticStack datastore
-        #     ds_names: list[str] = ['elasticsearch', 'logstash', 'kibana']
-        #     ds_ips: list[str] = [str(current_ip + i) for i in range(3)]
-        #     ds_ports: list[int] = [current_port + i for i in range(3)]
-        #     create_elasticstack(
-        #         BASE_FOLDER, test_fib_net_name, zip(ds_names, ds_ips, ds_ports), datastore_name, datastore_user,
-        #         datastore_password
-        #     )
-        #     for ds_name, ds_ip, ds_port in zip(ds_names, ds_ips, ds_ports):
-        #         test_fib_net[f'{datastore_name}-{ds_name}'] = {'ip': ds_ip, 'port': ds_port}
-        #         current_ip += 1
-        #         current_port += 1
+        elif datastore == 'elasticstack': # Create ElasticStack datastore
+            ds_names: list[str] = ['elasticsearch', 'kibana', 'logstash']
+            ds_ips: list[str] = [str(current_ip + i) for i in range(3)]
+            ds_ports: list[int] = [current_port + i for i in range(3)]
+            create_elasticstack(
+                BASE_FOLDER, test_fib_net_name, zip(ds_names, ds_ips, ds_ports), datastore_name, datastore_user,
+                datastore_password
+            )
+            for ds_name, ds_ip, ds_port in zip(ds_names, ds_ips, ds_ports):
+                test_fib_net[f'{datastore_name}-{ds_name}'] = {'ip': ds_ip, 'port': ds_port}
+                current_ip += 1
+                current_port += 1
         elif datastore == 'mongodb': # Create MongoDB datastore
             ds_names: list[str] = ['mongodb', 'mongo-express']
             ds_ips: list[str] = [str(current_ip + i) for i in range(2)]
@@ -398,9 +438,9 @@ for api in apis:
         if datastore == 'file':
             datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore']['ip']
             datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore']['port']
-        # elif datastore == 'elasticstack':
-        #     datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore-logstash']['ip']
-        #     datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore-logstash']['port']
+        elif datastore == 'elasticstack':
+            datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore-logstash']['ip']
+            datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore-logstash']['port']
         elif datastore == 'mongodb':
             datastore_ip: str = test_fib_net[f'test-fib-{api}-{datastore}-datastore-mongodb']['ip']
             datastore_port: int = test_fib_net[f'test-fib-{api}-{datastore}-datastore-mongodb']['port']

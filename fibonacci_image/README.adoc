@@ -100,95 +100,186 @@ Note: For the test scripts, you will be on your own for scaling down the test. A
 . Curl
 .. This image uses Curl version 8.16.0-r1 by Default.
 
-== Configurable Server Environmental Arguments
+== Configurable Server Environmental Settings
 
-**Important: All environmental variables in this section are required for the server to work. They do not have defaults.**
+This section discusses the current server environmental settings available.
 
+Firstly, the configuration file is JSON, and the settings are formatted in a way where a dot would correspond to them being nested inside the key before the dot. For example, `network.datastore.address` is equal to the following:
 
-. _SERVER_API_
+[source, json]
+----
+{
+    "network": {
+        "datastore": {
+            "address": "sampleAddress"
+        }
+    }
+}
+----
+
+Secondly, it is possible to use environmental variables to pass in settings. The format for environmental variable uppercases all letters and replaces . with _. For example, to alter the `network.datastore.address` setting, pass in the environmental variable `NETWORK_DATASTORE_ADDRESS`.
+
+Lastly, to set what JSON file the server uses to configure itself to check, set the `SERVER_CONFIG_FILEPATH` environmental variable. By default, it is set to `/usr/src/app/server_config.json` at build time. If you submit a custom JSON that does not have all settings defined or only configure a few settings by environmental variables, then the default JSON configuration (through the `DEFAULT_SERVER_CONFIG_FILEPATH` backup environmental variable) will be used to configure the rest of the settings. Please do not replace that file, and the server WILL throw a fit and crash itself through assertions if it can't find a setting.
+
+The following precedent is set for configured settings:
+
+Highest Priority: Environmental variable counterparts
+Medium Priority: `SERVER_CONFIG_FILEPATH` configuration file
+Lowest Priority: `DEFAULT_SERVER_CONFIG_FILEPATH` configuration file
+
+=== Settings List
+
+. _api_
 .. **Definition** -> The type of Server Web API to use.
-.. **Schema** -> Must be one of a set of constants defined for the `server.api` key in `setup_config.json`.
+.. **Schema** -> Must be one of a set of constants defined for the `server.api` key in the project README.
+.. **Default** -> "rest"
 
-. _SERVER_DATASTORE_
-.. **Definition** -> The type of Datastore to use.
-.. **Schema** -> Must be one of a set of constants defined for the `server.datastore` key in `setup_config.json`.
-
-. _SERVER_STAGE_COUNT_
-.. **Definition** -> The number of server stages in the test network.
-.. **Schema** -> Must be a number that can be turned into a Python integer.
-
-. _SERVER_STAGE_INDEX_
-.. **Definition** -> The server stage designator of the server in the test network.
-.. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT or equal to SERVER_STAGE_COUNT.
-
-. _SELF_LISTENING_ADDRESS_
-.. **Definition** -> The network address the server binds to in the test network.
-.. **Schema** -> Must be either a IPv4 address or a FQDN.
-
-. _SELF_HEALTHCHECK_ADDRESS_
-.. **Definition** -> The network address the server uses to call itself in the test network.
-.. **Schema** -> Must be either a IPv4 address or a FQDN.
-
-. _SELF_PORT_
-.. **Definition** -> The network port of the server in the test network.
-.. **Schema** -> Must be non-privileged port number.
-
-. _SECRET_KEY_TARGET_
-.. **Definition** -> The location of the personal TLS encryption key of the server in the test network.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _SECRET_CERT_TARGET_
-.. **Definition** -> The location of the personal TLS certificate of the server in the test network.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _SECRET_PEM_TARGET_
-.. **Definition** -> The location of the personal TLS key-certificate combination of the server in the test network.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _SECRET_CA_CERT_TARGET_
-.. **Definition** -> The location of the certificate authority TLS certificate of the server in the test network.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _DEST_ADDRESS_
-.. **Definition** -> The network address of the server stage that the server should contact in the test network.
-.. **Schema** -> Must be either a IPv4 address or a FQDN.
-
-. _DEST_PORT_
-.. **Definition** -> The network port of the server stage that the server should contact in the test network.
-.. **Schema** -> Must be non-privileged port number.
-
-. _DATASTORE_ADDRESS_
-.. **Definition** -> The network address of the datastore that the server should contact in the test network.
-.. **Schema** -> Must be either a IPv4 address or a FQDN.
-
-. _DATASTORE_PORT_
-.. **Definition** -> The network port of the datastore that the server should contact in the test network.
-.. **Schema** -> Must be non-privileged port number.
-
-. _DATASTORE_FILEPATH_
-.. **Definition** -> The filesystem location where the datastore should save logs.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _DATASTORE_DEFAULT_FILEPATH_
-.. **Definition** -> The filesystem location where the datastore should save logs.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _DATASTORE_OPERATIONS_FILEPATH_
-.. **Definition** -> The filesystem location where the datastore operations that can't be sent should be saved.
-.. **Schema** -> Must be a UNIX absolute filepath.
-
-. _DATASTORE_USER_
+. _datastore.auth.username_
 .. **Definition** -> The username of the account for accessing the datastore.
 .. **Schema** -> Must be a string with alphanumerical characters with no spaces. Optional.
+.. **Default** -> ""
 
-. _DATASTORE_PASSWORD_
+. _datastore.auth.password_
 .. **Definition** -> The password of the account for accessing the datastore.
-.. **Schema** -> Must be a complex, decently long string with no spaces. Optional.
+.. **Schema** -> Must be a complex, decently long string. Optional.
+.. **Default** -> ""
 
-. _THROTTLE_INTERVAL_
+. _datastore.logs.defaultPath_
+.. **Definition** -> The default filesystem location where the datastore should save server logs.
+.. **Schema** -> Must be a UNIX absolute filepath.
+.. **Default** -> "/tmp/default.csv"
+
+. _datastore.logs.operationPath_
+.. **Definition** -> The filesystem location where the datastore operations that can't be sent should be saved.
+.. **Schema** -> Must be a UNIX filepath.
+.. **Default** -> "/tmp/operations.csv"
+
+. _datastore.logs.serverPath_
+.. **Definition** -> The primary filesystem location where the datastore should save server logs.
+.. **Schema** -> Must be a UNIX filepath.
+.. **Default** -> "/tmp/datastore.csv"
+
+. _datastore.type_
+.. **Definition** -> The type of Datastore to use.
+.. **Schema** -> Must be one of a set of constants defined for the `server.datastore` key in the project README.
+.. **Default** -> "none"
+
+. _network.datastore.address_
+.. **Definition** -> The network address of the datastore that the server should contact in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+.. **Default** -> "127.0.0.1"
+
+. _network.datastore.port_
+.. **Definition** -> The network port of the datastore that the server should contact in the test network.
+.. **Schema** -> Must be non-privileged port number.
+.. **Default** -> 8080
+
+. _network.dest.address_
+.. **Definition** -> The network address of the server stage that the server should contact in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+.. **Default** -> "127.0.0.1"
+
+. _network.dest.port_
+.. **Definition** -> The network port of the server stage that the server should contact in the test network.
+.. **Schema** -> Must be non-privileged port number.
+.. **Default** -> 8080
+
+. _network.self.address.healthcheck_
+.. **Definition** -> The network address the server uses to call itself for a healthcheck in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+.. **Default** -> "127.0.0.1"
+
+. _network.self.address.listening_
+.. **Definition** -> The network address the server binds to in the test network.
+.. **Schema** -> Must be either a IPv4 address or a FQDN.
+.. **Default** -> "0.0.0.0"
+
+. _network.self.port_
+.. **Definition** -> The network port of the server in the test network.
+.. **Schema** -> Must be non-privileged port number.
+.. **Default** -> 8080
+
+. _stage.count_
+.. **Definition** -> The number of server stages in the test network.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 1
+
+. _stage.index_
+.. **Definition** -> The server stage designator of the server in the test network.
+.. **Schema** -> Must be a number that can be turned into a Python integer. Must be between 0 and SERVER_STAGE_COUNT or equal to SERVER_STAGE_COUNT.
+.. **Default** -> 1
+
+. _throttleSecs_
 .. **Definition** -> The interval that the server should wait in seconds between receiving fibonacci numbers and sending fibonacci numbers.
 .. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 5
 
-. _UPPER_BOUND_
+. _tls.ca.keyPath_
+.. **Definition** -> The location of the certificate authority TLS key of the server in the test network.
+.. **Schema** -> Must be a UNIX filepath.
+.. **Default** -> "./ca.key"
+
+. _tls.ca.certPath_
+.. **Definition** -> The location of the certificate authority TLS certificate of the server in the test network.
+.. **Schema** -> Must be a UNIX filepath.
+.. **Default** -> "./ca.crt"
+
+. _tls.gen.caSuffix_
+.. **Definition** -> The suffix to append to generated PEM files containing both the server's and CA's certificate.
+.. **Schema** -> Must be a string with letters, dashes, and/or hyphens.
+.. **Default** -> "ca"
+
+. _tls.gen.certDays_
+.. **Definition** -> The length that the server's created certificate should be active.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 1
+
+. _tls.gen.ext.cert_
+.. **Definition** -> The file extension to use for TLS certificates.
+.. **Schema** -> Must be a valid extension.
+.. **Default** -> "crt"
+
+. _tls.gen.ext.key_
+.. **Definition** -> The file extension to use for TLS keys.
+.. **Schema** -> Must be a valid extension.
+.. **Default** -> "key"
+
+. _tls.gen.ext.pem_
+.. **Definition** -> The file extension to use for TLS certificate-key combinations.
+.. **Schema** -> Must be a valid extension.
+.. **Default** -> "pem"
+
+. _tls.gen.keyLength_
+.. **Definition** -> The bit length of the RSA key.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 4096
+
+. _tls.gen.pubExponent_
+.. **Definition** -> The public exponent of the RSA key.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 65537
+
+. _tls.gen.secretTarget_
+.. **Definition** -> The filepath (minus the file extension) that should be used to name created server TLS materials.
+.. **Schema** -> Must be a UNIX filepath.
+.. **Default** -> "./self"
+
+. _tls.san.ips_
+.. **Definition** -> The list of IP addresses to use as SANs.
+.. **Schema** -> Must be an IP address or a string formatted as IP addresses separated with a comma.
+.. **Default** -> "127.0.0.1"
+
+. _tls.san.names_
+.. **Definition** -> The list of FDQNs to use as SANs.
+.. **Schema** -> Must be an FQDN or a string formatted as FQDNs separated with a comma.
+.. **Default** -> "localhost"
+
+. _upperBound_
 .. **Definition** -> The number that the server must stop sending new fibonacci numbers if the last number the server received is larger than.
 .. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 4000000000
+
+. _workers_
+.. **Definition** -> The number of server workers to create.
+.. **Schema** -> Must be a number that can be turned into a Python integer.
+.. **Default** -> 3

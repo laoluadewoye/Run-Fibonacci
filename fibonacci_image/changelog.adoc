@@ -1,6 +1,19 @@
 [cols="1,1"]
 |===
 
+a|Version 2.2.0 (In Development)
+a|* Added placeholder files for other API options.
+* Got a working Elasticstack setup during testing and uncommented the logic for it.
+* Added back a test logstash configuration YAML and a pipeline to testing folder.
+* Found bug where the Elasticstack log sending utility in datastore_utils is expecting a json response and converted it
+to outputting plain text.
+* Added TLS utility to server so it can generate its own server stuff.
+* Changed configuration scheme from an environmental scheme to a JSON file scheme that is supported by optional environmental configuration. Updated all relevant python files.
+* Modified `SERVER_IDENTIFIER` to be more concise and more descriptive of the server worker reporting logs.
+* Added environmental variables `SERVER_CONFIG_FILEPATH` and `DEFAULT_SERVER_CONFIG_FILEPATH` to Dockerfiles.
+* Updated `Configurable Server Environmental Settings` section in image README to reflect new changes.
+* *Note: Still haven't added full TLS for 3rd-party datastores yet, that's a thing for later. It's not that I can't, I want a way to test it from pure python without having to change file permissions on my Windows laptop.*
+
 a|Version 2.1.0 (Available tags are `latest`, `2.1.0`, `2.1.0-alpine`, `2.1.0-alma`)
 a|* Added new environmental variables `SECRET_PEM_TARGET`, `DATASTORE_USER`, `DATASTORE_PASSWORD` to support datastore authentication and tls setup.
 * Added `pymongo` and `psycopg2` Python libraries to `requirements.txt`.

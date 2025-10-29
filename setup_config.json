@@ -63,9 +63,9 @@
             "networkPort": 9000,
             "configs": {
                 "elasticstack": {
-                    "logstashImage": "docker.io/library/logstash:8.17.10",
-                    "elasticsearchImage": "docker.io/library/elasticsearch:8.17.10",
-                    "kibanaImage": "docker.io/library/kibana:8.17.10"
+                    "logstashImage": "docker.elastic.co/logstash/logstash:9.2.0",
+                    "elasticsearchImage": "docker.elastic.co/elasticsearch/elasticsearch:9.2.0",
+                    "kibanaImage": "docker.elastic.co/kibana/kibana:9.2.0"
                 },
                 "file": {
                     "format": "csv",

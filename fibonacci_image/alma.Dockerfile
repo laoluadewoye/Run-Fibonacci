@@ -30,7 +30,7 @@ WORKDIR /usr/src/app/
 # Copy components into working directory
 COPY components/ .
 
-# Install Pip requirements
+# Set virtual enviornment
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -49,6 +49,10 @@ USER app
 
 # Setup the healthcheck
 HEALTHCHECK --start-period=10s --interval=10s --timeout=5s --retries=3 CMD python3 /usr/src/app/send_healthcheck.py
+
+# Set default enviornmental variables
+ENV SERVER_CONFIG_FILEPATH="/usr/src/app/server_config.json"
+ENV DEFAULT_SERVER_CONFIG_FILEPATH="/usr/src/app/server_config.json"
 
 # Run the server
 ENTRYPOINT ["gunicorn"]

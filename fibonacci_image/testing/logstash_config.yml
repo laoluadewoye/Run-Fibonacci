@@ -1,0 +1,9 @@
+api.auth.basic.password: ${API_AUTH_BASIC_PASSWORD}
+api.auth.basic.password_policy.mode: ERROR
+api.auth.basic.username: ${API_AUTH_BASIC_USERNAME}
+api.auth.type: basic
+api.http.port: ${API_HTTP_PORT}
+log.format: json
+pipeline.ecs_compatibility: v8
+xpack.monitoring.elasticsearch.password: ${API_AUTH_BASIC_PASSWORD}
+xpack.monitoring.elasticsearch.username: logstash_system
